@@ -26,3 +26,7 @@ frontend/dist/
 
 # NOTE: logs/incident_runs.jsonl is intentionally NOT ignored:
 # the append-only run log is a required submission artefact.
+
+.kiro
+CLAUDE.md
+DEVELOPMENT_STATE.md
