@@ -1,0 +1,67 @@
+[
+  {
+    "incident_id": "INC-1001",
+    "disruption_type": "supplier_delay",
+    "affected_product_id": "LAPTOP-001",
+    "affected_warehouse_id": "WH-PUN-01",
+    "required_quantity": 100,
+    "destination_id": null,
+    "original_supplier_id": "SUP-01",
+    "original_route_id": null,
+    "reported_delay_days": 12,
+    "deadline_days": 7,
+    "description": "Primary supplier SUP-01 has delayed its LAPTOP-001 shipment to WH-PUN-01 by 12 days. 100 units are needed within 7 days."
+  },
+  {
+    "incident_id": "INC-1002",
+    "disruption_type": "route_blockage",
+    "affected_product_id": "PHONE-002",
+    "affected_warehouse_id": "WH-BLR-04",
+    "required_quantity": 50,
+    "destination_id": "CUST-DEL",
+    "original_supplier_id": null,
+    "original_route_id": "RT-BLR-DEL-04",
+    "reported_delay_days": 7,
+    "deadline_days": 5,
+    "description": "Route RT-BLR-DEL-04 (Bengaluru to Delhi) is blocked. 50 PHONE-002 units must reach CUST-DEL within 5 days."
+  },
+  {
+    "incident_id": "INC-1003",
+    "disruption_type": "warehouse_stockout",
+    "affected_product_id": "TABLET-003",
+    "affected_warehouse_id": "WH-PUN-01",
+    "required_quantity": 80,
+    "destination_id": null,
+    "original_supplier_id": "SUP-01",
+    "original_route_id": null,
+    "reported_delay_days": null,
+    "deadline_days": 1,
+    "description": "WH-PUN-01 is below safety stock for TABLET-003 (10 on hand, safety 20). 80 units are needed within 1 day."
+  },
+  {
+    "incident_id": "INC-1004",
+    "disruption_type": "supplier_delay",
+    "affected_product_id": "LAPTOP-001",
+    "affected_warehouse_id": "WH-DEL-03",
+    "required_quantity": 240,
+    "destination_id": null,
+    "original_supplier_id": "SUP-04",
+    "original_route_id": null,
+    "reported_delay_days": 10,
+    "deadline_days": 5,
+    "description": "SUP-04 has delayed a 240-unit LAPTOP-001 order for WH-DEL-03 by 10 days. Demand must be met within 5 days."
+  },
+  {
+    "incident_id": "INC-1005",
+    "disruption_type": "route_blockage",
+    "affected_product_id": "LAPTOP-001",
+    "affected_warehouse_id": "WH-PUN-01",
+    "required_quantity": 30,
+    "destination_id": "CUST-MUM",
+    "original_supplier_id": null,
+    "original_route_id": "RT-PUN-MUM-01",
+    "reported_delay_days": 5,
+    "deadline_days": 5,
+    "description": "Route RT-PUN-MUM-01 (Pune to Mumbai) is blocked. 30 LAPTOP-001 units must reach CUST-MUM within 5 days."
+  }
+]

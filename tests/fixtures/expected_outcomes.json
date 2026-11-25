@@ -1,0 +1,32 @@
+[
+  {
+    "incident_id": "INC-1001",
+    "expected_decision": "REORDER",
+    "expected_option_id": "SUP-02",
+    "rationale": "Replenishment = 100 + 40 - 25 = 115. SUP-02 is active, capacity 150 >= 115, lead time 3 <= 7 days. SUP-04 fails (capacity 50, lead 15). No warehouse has 100 usable units (WH-MUM-02: 90, WH-DEL-03: 60), so REROUTE is infeasible."
+  },
+  {
+    "incident_id": "INC-1002",
+    "expected_decision": "REROUTE",
+    "expected_option_id": "RT-DEL-DEL-05",
+    "rationale": "REORDER does not unblock delivery for a route blockage. WH-DEL-03 has 200 - 50 = 150 usable PHONE-002 >= 50, and RT-DEL-DEL-05 is available with 1 + 0 = 1 day <= 5."
+  },
+  {
+    "incident_id": "INC-1003",
+    "expected_decision": "HOLD",
+    "expected_option_id": null,
+    "rationale": "Replenishment = 80 + 20 - 10 = 90. SUP-01 is the disrupted supplier and inactive; SUP-03 lead time 2 > 1 day; SUP-05 capacity 0. No other warehouse stocks TABLET-003."
+  },
+  {
+    "incident_id": "INC-1004",
+    "expected_decision": "HOLD",
+    "expected_option_id": null,
+    "rationale": "Replenishment = 240 + 20 - 80 = 180. SUP-02 capacity 150 < 180; SUP-04 is the disrupted supplier. No available route delivers to WH-DEL-03."
+  },
+  {
+    "incident_id": "INC-1005",
+    "expected_decision": "REROUTE",
+    "expected_option_id": "RT-MUM-MUM-02",
+    "rationale": "WH-MUM-02 has 120 - 30 = 90 usable LAPTOP-001 >= 30 and RT-MUM-MUM-02 takes 1 day <= 5. RT-DEL-MUM-03 (WH-DEL-03, 60 usable, 4 days) is also feasible but slower."
+  }
+]

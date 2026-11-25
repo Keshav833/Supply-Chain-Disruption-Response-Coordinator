@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# Secrets: real keys live only in .env (never committed)
+.env
+.env.*
+!.env.example
+
+# Notebooks
+.ipynb_checkpoints/
+
+# Local databases
+*.db
+
+# Frontend build/dependency output (package-lock.json is retained for reproducible builds)
+frontend/node_modules/
+frontend/dist/
+
+# NOTE: logs/incident_runs.jsonl is intentionally NOT ignored:
+# the append-only run log is a required submission artefact.

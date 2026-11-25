@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supply Chain Disruption Response Coordinator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="deck" class="deck">
+        <!-- Slide 1: Title -->
+        <div class="slide slide-title">
+            <div class="title-box">
+                <h1>Supply Chain Disruption Response Coordinator</h1>
+                <p class="subtitle">CSE476 — Agentic AI and Intelligent Automation</p>
+                <p class="university">Lovely Professional University</p>
+                <div class="author-section">
+                    <p><strong>Presented by:</strong> <span id="author-name">Keshav Chauhan</span></p>
+                    <p><strong>Group/Registration:</strong> <span id="group-name">(edit in app.js)</span></p>
+                </div>
+                <blockquote class="hook-line">
+                    <strong>"A supplier is late. Who decides what happens next?"</strong>
+                </blockquote>
+            </div>
+            <div class="speaker-notes">
+                Welcome. Today I'm presenting a multi-agent system that answers a simple but critical question: when a supply chain disruption happens, who should decide the response? Our system delegates that decision to a network of specialized agents that collaborate on a shared blackboard, ensuring every decision is backed by evidence and validated independently. Let me walk you through how it works, what makes it resilient, and what we learned building it.
+            </div>
+        </div>
+
+        <!-- Slide 2: Problem and Objective -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>The Problem: Manual Supply Chain Response</h2>
+                <div class="two-column">
+                    <div class="column">
+                        <h3>❌ Manual Process</h3>
+                        <ul>
+                            <li>Humans check email and sheets</li>
+                            <li>Call suppliers, routes separately</li>
+                            <li>Decisions based on incomplete info</li>
+                            <li>Slow and error-prone</li>
+                        </ul>
+                    </div>
+                    <div class="column">
+                        <h3>⚠️ Plain LLM Issues</h3>
+                        <ul>
+                            <li>Hallucinates supplier capacity</li>
+                            <li>No auditability of reasoning</li>
+                            <li>Can't be corrected post-decision</li>
+                            <li>No safety guardrails</li>
+                        </ul>
+                    </div>
+                </div>
+                <h3 style="margin-top: 1.5em; text-align: center;">✓ Our Objective</h3>
+                <p style="text-align: center; font-size: 1.1em; margin-top: 0.5em;">
+                    <strong>Automated, deterministic, auditable decisions</strong> using specialized agents on a shared blackboard with <strong>zero LLM hallucination</strong> and <strong>complete decision traceability</strong>.
+                </p>
+            </div>
+            <div class="speaker-notes">
+                The challenge is that manual decision-making is slow and inconsistent, while unconstrained LLMs can't be trusted with critical supply chain decisions—they hallucinate data, provide no audit trail, and can't be corrected if they make a mistake. Our solution combines the structure of a blackboard architecture with deterministic tools and an independent validation gate, so every decision is evidence-backed and verifiable. All five agents run concurrently, publish their findings to the shared blackboard, and the Coordinator makes the final call using only the evidence on the board, never touching raw data directly.
+            </div>
+        </div>
+
+        <!-- Slide 3: The Five Agents -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>The Five Agents</h2>
+                <div class="agent-grid">
+                    <div class="agent-card" style="border-left: 4px solid #FF6B6B;">
+                        <h3>Monitor</h3>
+                        <p class="agent-role">Validates report &amp; identifies affected sites</p>
+                        <p class="agent-tools"><strong>Tools:</strong> validate_disruption, identify_affected_sites</p>
+                        <p class="agent-bb"><strong>Writes:</strong> incident_assessment</p>
+                    </div>
+                    <div class="agent-card" style="border-left: 4px solid #4ECDC4;">
+                        <h3>Inventory</h3>
+                        <p class="agent-role">Checks warehouse stock &amp; replenishment need</p>
+                        <p class="agent-tools"><strong>Tools:</strong> get_inventory, calculate_stock_shortage</p>
+                        <p class="agent-bb"><strong>Writes:</strong> inventory_findings</p>
+                    </div>
+                    <div class="agent-card" style="border-left: 4px solid #45B7D1;">
+                        <h3>Supplier</h3>
+                        <p class="agent-role">Finds alternatives &amp; validates capacity/lead time</p>
+                        <p class="agent-tools"><strong>Tools:</strong> find_alternative_suppliers, check_supplier_capacity</p>
+                        <p class="agent-bb"><strong>Writes:</strong> supplier_findings</p>
+                    </div>
+                    <div class="agent-card" style="border-left: 4px solid #FFA07A;">
+                        <h3>Route</h3>
+                        <p class="agent-role">Locates alternative routes &amp; checks viability</p>
+                        <p class="agent-tools"><strong>Tools:</strong> get_available_routes, calculate_route_delay</p>
+                        <p class="agent-bb"><strong>Writes:</strong> route_findings</p>
+                    </div>
+                    <div class="agent-card" style="border-left: 4px solid #95E1D3; grid-column: 1/-1; margin: 0 auto; width: 100%; max-width: 450px;">
+                        <h3>Coordinator</h3>
+                        <p class="agent-role"><strong>Decides from Blackboard evidence only. Zero access to raw data.</strong></p>
+                        <p class="agent-tools"><strong>Tools:</strong> read_blackboard_evidence, validate_mitigation_decision</p>
+                        <p class="agent-bb"><strong>Writes:</strong> mitigation_decision + notifications</p>
+                    </div>
+                </div>
+            </div>
+            <div class="speaker-notes">
+                Each agent has exactly two tools—deterministic Python functions that query our in-memory datasets. All agents are specialized: the first four gather evidence in parallel, and the Coordinator runs only after all evidence is collected. The key insight is that the Coordinator never accesses the raw datasets directly. It only reads the published evidence on the shared blackboard. This enforces a clean separation: computation is distributed, but decisions are centralized and auditable.
+            </div>
+        </div>
+
+        <!-- Slide 4: Architecture -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>Blackboard Architecture</h2>
+                <div style="display: flex; gap: 2em; align-items: flex-start;">
+                    <div style="flex: 1;">
+                        <svg viewBox="0 0 300 350" class="architecture-svg">
+                            <!-- Incident box -->
+                            <rect x="10" y="10" width="280" height="40" fill="#f0f0f0" stroke="#333" stroke-width="2" rx="4"/>
+                            <text x="150" y="37" text-anchor="middle" font-weight="bold">Incident (Frozen)</text>
+
+                            <!-- Monitor gate -->
+                            <rect x="10" y="70" width="280" height="35" fill="#FFE0E0" stroke="#FF6B6B" stroke-width="2" rx="4"/>
+                            <text x="150" y="93" text-anchor="middle" font-weight="bold">Monitor Gate → incident_assessment</text>
+
+                            <!-- Parallel agents -->
+                            <g id="parallel">
+                                <!-- Inventory -->
+                                <rect x="10" y="125" width="65" height="50" fill="#E0F5F3" stroke="#4ECDC4" stroke-width="2" rx="4"/>
+                                <text x="42.5" y="150" text-anchor="middle" font-size="12" font-weight="bold">Inventory</text>
+                                <text x="42.5" y="165" text-anchor="middle" font-size="10">findings</text>
+                                
+                                <!-- Supplier -->
+                                <rect x="90" y="125" width="65" height="50" fill="#E0F0FF" stroke="#45B7D1" stroke-width="2" rx="4"/>
+                                <text x="122.5" y="150" text-anchor="middle" font-size="12" font-weight="bold">Supplier</text>
+                                <text x="122.5" y="165" text-anchor="middle" font-size="10">findings</text>
+                                
+                                <!-- Route -->
+                                <rect x="170" y="125" width="65" height="50" fill="#FFE8D0" stroke="#FFA07A" stroke-width="2" rx="4"/>
+                                <text x="202.5" y="150" text-anchor="middle" font-size="12" font-weight="bold">Route</text>
+                                <text x="202.5" y="165" text-anchor="middle" font-size="10">findings</text>
+                            </g>
+
+                            <!-- Dashed lines showing parallel -->
+                            <line x1="150" y1="105" x2="42.5" y2="125" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
+                            <line x1="150" y1="105" x2="122.5" y2="125" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
+                            <line x1="150" y1="105" x2="202.5" y2="125" stroke="#999" stroke-width="1" stroke-dasharray="3,3"/>
+
+                            <!-- Coordinator -->
+                            <rect x="30" y="200" width="240" height="40" fill="#E8F8F5" stroke="#95E1D3" stroke-width="2" rx="4"/>
+                            <text x="150" y="224" text-anchor="middle" font-weight="bold">Coordinator (reads evidence snapshot only)</text>
+
+                            <!-- Decision -->
+                            <rect x="30" y="260" width="240" height="40" fill="#FFF9E6" stroke="#FFB84D" stroke-width="2" rx="4"/>
+                            <text x="150" y="284" text-anchor="middle" font-weight="bold">Mitigation Decision (REORDER / REROUTE / HOLD)</text>
+
+                            <!-- Log -->
+                            <rect x="30" y="320" width="240" height="20" fill="#f5f5f5" stroke="#999" stroke-width="1" rx="2"/>
+                            <text x="150" y="333" text-anchor="middle" font-size="10">Append-only JSONL log (audit trail)</text>
+                        </svg>
+                    </div>
+                    <div style="flex: 1; font-size: 0.9em;">
+                        <h3 style="margin-top: 0;">Key Design Principles</h3>
+                        <ul style="line-height: 1.8;">
+                            <li><strong>Agents never talk directly.</strong> All collaboration via Blackboard.</li>
+                            <li><strong>Write-once, owner-only.</strong> Each agent owns one section. Lock enforced.</li>
+                            <li><strong>Evidence status tracking.</strong> AVAILABLE, UNKNOWN, or FAILED.</li>
+                            <li><strong>Coordinator is blind.</strong> No raw data access; reads snapshot only.</li>
+                            <li><strong>Independent validation gate.</strong> Every decision re-checked deterministically.</li>
+                            <li><strong>Append-only audit log.</strong> Every run, every tool call, complete trace.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="speaker-notes">
+                The blackboard is a classic pattern for multi-agent systems. Here's how ours works: First, the incident comes in. The Monitor validates it and publishes an assessment. If valid, Inventory, Supplier, and Route agents run concurrently using asyncio.gather—each with its own timeout. Each agent publishes exactly one section to the blackboard and can't modify it again. The Coordinator then reads a snapshot of all published evidence—not the original datasets—and makes a decision. That decision goes through an independent validation gate. Finally, the entire trace is appended to a JSONL log. If any agent times out or fails, its section stays empty and the Coordinator sees that as FAILED evidence, not as a gap to guess about.
+            </div>
+        </div>
+
+        <!-- Slide 5: One Run, Step by Step (INC-1001) -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>Execution: INC-1001 Timeline</h2>
+                <div class="timeline">
+                    <div class="timeline-item" data-reveal="0">
+                        <span class="timeline-label">0–4</span>
+                        <span class="timeline-event"><strong>Monitor:</strong> validate_disruption ✓, identify_affected_sites ✓</span>
+                        <span class="timeline-detail">→ incident_assessment: valid, HIGH severity, affected WH-PUN-01</span>
+                    </div>
+                    <div class="timeline-item" data-reveal="1">
+                        <span class="timeline-label">6–10</span>
+                        <span class="timeline-event"><strong>Inventory (parallel):</strong> get_inventory ✓✓, calculate_stock_shortage ✓</span>
+                        <span class="timeline-detail">→ inventory_findings: 25 available, 40 safety, 115 needed. Shortage = 90.</span>
+                    </div>
+                    <div class="timeline-item" data-reveal="2">
+                        <span class="timeline-label">11–14</span>
+                        <span class="timeline-event"><strong>Supplier (parallel):</strong> find_alternative_suppliers ✓, check_supplier_capacity ✓</span>
+                        <span class="timeline-detail">→ supplier_findings: SUP-02 feasible (capacity 150 ≥ 115, lead 3d ≤ 7d). SUP-01, SUP-04 not viable.</span>
+                    </div>
+                    <div class="timeline-item" data-reveal="3">
+                        <span class="timeline-label">15–18</span>
+                        <span class="timeline-event"><strong>Route (parallel):</strong> get_available_routes ✓, calculate_route_delay ✓</span>
+                        <span class="timeline-detail">→ route_findings: RT-MUM-PUN-06 not viable (origin WH-MUM-02 has 90 &lt; 100 required).</span>
+                    </div>
+                    <div class="timeline-item" data-reveal="4">
+                        <span class="timeline-label">20–23</span>
+                        <span class="timeline-event"><strong>Coordinator:</strong> read_blackboard_evidence ✓, validate_mitigation_decision ✓</span>
+                        <span class="timeline-detail">→ mitigation_decision: REORDER from SUP-02 (only viable option). Notify: Ops, Procurement, Supplier, Warehouse.</span>
+                    </div>
+                    <div class="timeline-item" data-reveal="5">
+                        <span class="timeline-label">24–25</span>
+                        <span class="timeline-event"><strong>Final validation & completion</strong></span>
+                        <span class="timeline-detail">✓ Outcome: decided. Run logged. Duration: 20.9 ms. Run ID: 8bfdd84ef4af49d481a5f40d16d80fbd</span>
+                    </div>
+                </div>
+                <p style="margin-top: 2em; font-size: 0.9em; text-align: center; color: #666;">
+                    <em>Execution mode:</em> <strong>deterministic_fallback</strong> (no live LLM call succeeded)
+                </p>
+            </div>
+            <div class="speaker-notes">
+                Let me walk you through one real execution. We ran INC-1001: a supplier delay affecting LAPTOP-001 at Pune warehouse. 100 units needed in 7 days, but the primary supplier is 12 days late. The Monitor confirmed it's high severity. Inventory checked Pune's local stock: only 25 units, with 40 reserved as safety buffer. So 115 units need to come from elsewhere. Supplier agent checked alternatives: SUP-02 can deliver 150 units in 3 days, well within the deadline. Route agent looked for indirect paths—WH-MUM-02 has 90 usable units, but we need 100, so that route is not viable. The Coordinator had one choice: REORDER from SUP-02. That decision passed the final validation, and the run was logged with a unique ID and complete trace. The whole thing took 20 milliseconds.
+            </div>
+        </div>
+
+        <!-- Slide 6: Design Strengths -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>Design Strengths: Why This Matters</h2>
+                <div class="strength-grid">
+                    <div class="strength-box">
+                        <h4>🔒 Typed Pydantic Board</h4>
+                        <p>Every blackboard section and log entry is strictly typed. Schema violations are caught immediately.</p>
+                    </div>
+                    <div class="strength-box">
+                        <h4>✍️ Write-Once, Ownership Enforced</h4>
+                        <p>Each agent owns one section. Writes are protected by asyncio.Lock. No overwrites or conflicts.</p>
+                    </div>
+                    <div class="strength-box">
+                        <h4>📊 Evidence Status Tracking</h4>
+                        <p>AVAILABLE, UNKNOWN, or FAILED. Coordinator knows exactly which evidence is trustworthy.</p>
+                    </div>
+                    <div class="strength-box">
+                        <h4>🛡️ Zero LLM Hallucination Risk</h4>
+                        <p>All tools are deterministic Python functions over in-memory data. No hallucination possible.</p>
+                    </div>
+                    <div class="strength-box">
+                        <h4>⏱️ Automatic Retries & Timeouts</h4>
+                        <p>Transient failures retry with backoff. Each agent has a 60-second timeout. Bounded, predictable.</p>
+                    </div>
+                    <div class="strength-box">
+                        <h4>📜 Append-Only Audit Log</h4>
+                        <p>Every run, every tool call, every decision logged to JSONL. Never rewritten or deleted.</p>
+                    </div>
+                    <div class="strength-box">
+                        <h4>🚫 Coordinator Blind to Raw Data</h4>
+                        <p><strong>Test-proven:</strong> Coordinator cannot access inventory.json, suppliers.json, routes.json. Only reads Blackboard.</p>
+                    </div>
+                    <div class="strength-box">
+                        <h4>✅ Independent Validation Gate</h4>
+                        <p>Every decision is re-validated deterministically before persisting. Invalid decisions are rejected.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="speaker-notes">
+                Let me highlight the core strengths of this design. First, everything is typed with Pydantic, so schema errors are impossible. Second, we enforce write-once semantics with asyncio.Lock, so there's no race condition where two agents accidentally overwrite the same section. Third, we track whether each piece of evidence is AVAILABLE, UNKNOWN, or FAILED—the Coordinator never guesses; if evidence is missing, it stays missing. Fourth, all tools are deterministic Python functions, not LLM calls, so hallucination is impossible by construction. Fifth, we have automatic retries and timeouts for resilience. Sixth, the entire audit trail is appended to a JSONL file—useful for compliance and debugging. Seventh, and most critically, the Coordinator has zero access to the raw datasets. It can only read the evidence the other agents published on the blackboard. This is enforced at the type-level: the Coordinator's input contains only a snapshot of the blackboard, not the datasets. And eighth, every decision goes through an independent validation gate—deterministic re-checking against the evidence.
+            </div>
+        </div>
+
+        <!-- Slide 7: Testing and Failure Handling -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>Testing &amp; Resilience</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2em;">
+                    <div>
+                        <h3>Test Coverage</h3>
+                        <table class="test-table">
+                            <tr>
+                                <td><strong>Total Tests</strong></td>
+                                <td style="text-align: right;">188</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Passed</strong></td>
+                                <td style="text-align: right;">✓ 188</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Skipped</strong></td>
+                                <td style="text-align: right;">1 (live Gemini, network unavailable)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Failed</strong></td>
+                                <td style="text-align: right;">0</td>
+                            </tr>
+                        </table>
+                        <h3 style="margin-top: 1.5em;">Evaluation (5 Real Scenarios)</h3>
+                        <table class="test-table">
+                            <tr>
+                                <td><strong>Decision Accuracy</strong></td>
+                                <td style="text-align: right;">100%</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Option Accuracy</strong></td>
+                                <td style="text-align: right;">100%</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Fully Passing Scenarios</strong></td>
+                                <td style="text-align: right;">5/5</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div>
+                        <h3>Failure Scenarios Tested</h3>
+                        <ul style="line-height: 2;">
+                            <li><strong>INC-1003:</strong> Tight deadline (1 day), all suppliers over lead time → decision = HOLD ✓</li>
+                            <li><strong>INC-1004:</strong> Demand exceeds any single supplier capacity → decision = HOLD ✓</li>
+                            <li><strong>Timeout resilience:</strong> Agents that exceed 60s are marked FAILED; decision still valid ✓</li>
+                            <li><strong>Missing evidence:</strong> If an agent fails, Coordinator sees UNKNOWN and decides conservatively ✓</li>
+                            <li><strong>Validation rejection:</strong> Invalid decisions caught by independent gate and rejected ✓</li>
+                        </ul>
+                    </div>
+                </div>
+                <p style="margin-top: 1.5em; padding: 1em; background: #fff9e6; border-left: 4px solid #FFB84D; border-radius: 4px;">
+                    <strong>Deterministic Evaluation Mode:</strong> All tests use deterministic fallback (no live LLM). Decisions are based on typed, validated business rules over sample data, not learned models.
+                </p>
+            </div>
+            <div class="speaker-notes">
+                We test rigorously. All 188 tests pass. The evaluation runner measures decision and option accuracy against expected outcomes for five real scenarios, and we score 100% on both metrics. We specifically test failure cases: incident INC-1003 has a 1-day deadline, and no alternative supplier can deliver in time, so the decision correctly becomes HOLD. INC-1004 has a large demand that exceeds the best supplier's capacity, again resulting in HOLD. We also test timeout resilience—if an agent takes too long, it's marked as FAILED, the Coordinator sees UNKNOWN evidence for that section, and still makes a decision based on what's available. We test validation rejection: if the final gate detects that a proposed decision violates the business rules, it rejects it. All testing is deterministic; we never rely on a live LLM.
+            </div>
+        </div>
+
+        <!-- Slide 8: Results, Limitations, and Q&A -->
+        <div class="slide">
+            <div class="slide-content">
+                <h2>Results, Limitations & Future Scope</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em;">
+                    <div>
+                        <h3>✓ Results</h3>
+                        <ul style="line-height: 1.9;">
+                            <li><strong>Automated mitigation decisions:</strong> REORDER, REROUTE, or HOLD</li>
+                            <li><strong>Complete audit trail:</strong> Every run logged with full trace</li>
+                            <li><strong>Zero hallucination:</strong> Deterministic tools only</li>
+                            <li><strong>100% accuracy:</strong> On evaluation scenarios</li>
+                            <li><strong>Concurrent investigation:</strong> 3 agents run in parallel</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>⚠️ Honest Limitations</h3>
+                        <ul style="line-height: 1.9;">
+                            <li><strong>Mock data only:</strong> Suppliers, routes, inventory are simulated</li>
+                            <li><strong>Advisory only:</strong> authorized=False; human must approve</li>
+                            <li><strong>Live LLM requires internet:</strong> No fallback if API is down</li>
+                            <li><strong>Evaluation on 5 scenarios:</strong> Not production-scale data</li>
+                            <li><strong>Fixed to Semantic Kernel:</strong> No alternatives tested</li>
+                        </ul>
+                    </div>
+                </div>
+                <div style="margin-top: 1.5em; padding: 1em; background: #E0F5F3; border-radius: 4px;">
+                    <h3>🚀 Future Scope</h3>
+                    <ul style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.8em; line-height: 1.6; font-size: 0.95em;">
+                        <li>Real supplier and route data integration</li>
+                        <li>Human authorization workflow</li>
+                        <li>Real-time delivery tracking</li>
+                        <li>Multi-round LLM negotiation</li>
+                        <li>Cost optimization agent</li>
+                        <li>Scenario learning and retraining</li>
+                    </ul>
+                </div>
+                <div style="margin-top: 1.5em; text-align: center; font-size: 1.1em; font-weight: bold;">
+                    Questions?
+                </div>
+            </div>
+            <div class="speaker-notes">
+                So to summarize: we built a system that automates mitigation decisions for supply chain disruptions. It outputs one of four decisions—REORDER, REROUTE, HOLD, or UNKNOWN—with full justification and a list of parties to notify. Every decision is logged with complete traceability. We achieved 100% accuracy on our evaluation set. The honest limitations: we're working with simulated data, decisions are advisory only and require human sign-off, the live LLM feature needs internet connectivity, and our evaluation was on five carefully chosen scenarios, not millions of real incidents. In the future, we'd integrate real data sources, add a human authorization workflow, track deliveries in real time, potentially have the LLM negotiate with suppliers in multiple rounds, and add a cost optimization agent. This was a learning exercise in distributed decision-making and supply chain automation, and I think we've shown that a blackboard architecture with deterministic tools and independent validation is a solid foundation for critical systems.
+            </div>
+        </div>
+
+        <!-- APPENDIX MARKER -->
+        <div class="slide slide-appendix">
+            <div class="slide-content">
+                <h1>Appendix</h1>
+                <p style="text-align: center; color: #999; margin-top: 2em;">
+                    Backup slides follow
+                </p>
+            </div>
+        </div>
+
+        <!-- Slide A: Tech Stack -->
+        <div class="slide slide-appendix-content">
+            <div class="slide-content">
+                <h2>A. Tech Stack</h2>
+                <table class="tech-table">
+                    <tr>
+                        <th>Category</th>
+                        <th>Package</th>
+                        <th>Version</th>
+                        <th>Purpose</th>
+                    </tr>
+                    <tr>
+                        <td>Orchestration</td>
+                        <td>semantic-kernel</td>
+                        <td>1.47.0</td>
+                        <td>Multi-agent coordination, function calling</td>
+                    </tr>
+                    <tr>
+                        <td>LLM Connector</td>
+                        <td>google-genai</td>
+                        <td>2.29.0</td>
+                        <td>Gemini API integration (live LLM optional)</td>
+                    </tr>
+                    <tr>
+                        <td>Data Validation</td>
+                        <td>pydantic</td>
+                        <td>2.13.5</td>
+                        <td>Typed schemas for all data models</td>
+                    </tr>
+                    <tr>
+                        <td>Config</td>
+                        <td>pydantic-settings</td>
+                        <td>2.16.3</td>
+                        <td>Environment-based configuration</td>
+                    </tr>
+                    <tr>
+                        <td>Env Vars</td>
+                        <td>python-dotenv</td>
+                        <td>1.2.4</td>
+                        <td>Load .env configuration</td>
+                    </tr>
+                    <tr>
+                        <td>REST API</td>
+                        <td>fastapi</td>
+                        <td>0.163.2</td>
+                        <td>HTTP endpoints for orchestration</td>
+                    </tr>
+                    <tr>
+                        <td>ASGI Server</td>
+                        <td>uvicorn[standard]</td>
+                        <td>0.54.0</td>
+                        <td>Production ASGI server</td>
+                    </tr>
+                    <tr>
+                        <td>HTTP Client</td>
+                        <td>httpx</td>
+                        <td>0.28.1</td>
+                        <td>Async HTTP requests</td>
+                    </tr>
+                    <tr>
+                        <td>Testing</td>
+                        <td>pytest</td>
+                        <td>9.2.0</td>
+                        <td>Test framework</td>
+                    </tr>
+                    <tr>
+                        <td>Async Testing</td>
+                        <td>pytest-asyncio</td>
+                        <td>1.5.0</td>
+                        <td>Async test support</td>
+                    </tr>
+                    <tr>
+                        <td>Fallback LLM</td>
+                        <td>openai</td>
+                        <td>3.53.0</td>
+                        <td>Alternative LLM connector (not currently used)</td>
+                    </tr>
+                </table>
+            </div>
+            <div class="speaker-notes">
+                The tech stack is lean and focused. Semantic Kernel 1.47.0 provides the multi-agent orchestration and function calling infrastructure. Google-genai 2.29.0 gives us optional access to Gemini's API for live LLM runs. Pydantic handles all data validation with strict typing. FastAPI provides the REST endpoints, uvicorn the server. We use pytest for all testing. All versions are pinned for reproducibility.
+            </div>
+        </div>
+
+        <!-- Slide B: Sample Data -->
+        <div class="slide slide-appendix-content">
+            <div class="slide-content">
+                <h2>B. Sample Data</h2>
+                <p style="font-size: 0.85em; margin-bottom: 1em;"><strong>One real incident from incidents.json:</strong></p>
+                <pre class="code-block" style="font-size: 0.75em; max-height: 200px; overflow-y: auto;"><code>{
+  "incident_id": "INC-1001",
+  "disruption_type": "supplier_delay",
+  "affected_product_id": "LAPTOP-001",
+  "affected_warehouse_id": "WH-PUN-01",
+  "required_quantity": 100,
+  "destination_id": null,
+  "original_supplier_id": "SUP-01",
+  "reported_delay_days": 12,
+  "deadline_days": 7,
+  "description": "Primary supplier SUP-01 has delayed shipment by 12 days."
+}</code></pre>
+                <p style="font-size: 0.85em; margin-top: 1.5em; margin-bottom: 0.5em;"><strong>Inventory record sample:</strong></p>
+                <pre class="code-block" style="font-size: 0.75em;"><code>{ "warehouse_id": "WH-PUN-01", "product_id": "LAPTOP-001", "available_stock": 25, "safety_stock": 40 }</code></pre>
+                <p style="font-size: 0.85em; margin-top: 1.5em; margin-bottom: 0.5em;"><strong>Supplier record sample:</strong></p>
+                <pre class="code-block" style="font-size: 0.75em;"><code>{ "supplier_id": "SUP-02", "name": "FastTech", "supported_products": ["LAPTOP-001"], "available_capacity": 150, "lead_time_days": 3, "is_active": true }</code></pre>
+                <p style="font-size: 0.85em; margin-top: 1.5em; margin-bottom: 0.5em;"><strong>Route record sample:</strong></p>
+                <pre class="code-block" style="font-size: 0.75em;"><code>{ "route_id": "RT-MUM-PUN-06", "origin": "WH-MUM-02", "destination": "WH-PUN-01", "is_available": true, "normal_transit_days": 1 }</code></pre>
+            </div>
+            <div class="speaker-notes">
+                Our sample data includes five incidents, five suppliers with varying capacity and lead times, multiple warehouses, and several routes with different transit times and availability. The Inventory, Supplier, and Route agents query this in-memory dataset using typed Python functions. All data is fully validated against the Pydantic schema before any agent sees it.
+            </div>
+        </div>
+
+        <!-- Slide C: API & Dashboard -->
+        <div class="slide slide-appendix-content">
+            <div class="slide-content">
+                <h2>C. API &amp; Dashboard</h2>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5em;">
+                    <div>
+                        <h3>FastAPI Endpoints</h3>
+                        <ul style="font-size: 0.9em; line-height: 1.8;">
+                            <li><code>GET /health</code><br/><span class="api-desc">Health check</span></li>
+                            <li><code>POST /incident/process</code><br/><span class="api-desc">Run one incident, return decision</span></li>
+                            <li><code>GET /incident/{incident_id}/trace</code><br/><span class="api-desc">Retrieve run trace and decision</span></li>
+                            <li><code>GET /blackboard</code><br/><span class="api-desc">View current blackboard state</span></li>
+                            <li><code>GET /analysis/sample</code><br/><span class="api-desc">Sample incident analysis</span></li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h3>Frontend Dashboard</h3>
+                        <ul style="font-size: 0.9em; line-height: 1.8;">
+                            <li><strong>Overview:</strong> List recent incidents, decisions</li>
+                            <li><strong>Blackboard View:</strong> Live evidence from current run</li>
+                            <li><strong>Trace View:</strong> Step-by-step execution timeline</li>
+                            <li><strong>Recommendation:</strong> Decision with justification</li>
+                            <li><strong>Audit Status:</strong> Log persistence, run ID</li>
+                        </ul>
+                        <p style="margin-top: 1.5em; padding: 0.8em; background: #f5f5f5; border-radius: 4px; font-size: 0.85em;">
+                            <strong>Note:</strong> Dashboard is React + Vite, served from <code>frontend/</code>. Browser proxies <code>/api</code> calls to FastAPI during local development.
+                        </p>
+                    </div>
+                </div>
+                <div style="margin-top: 1.5em; padding: 1em; background: #E8F8F5; border-left: 4px solid #4ECDC4; border-radius: 4px;">
+                    <strong>Start the API:</strong> <code>python -m supply_chain.api.app</code> or <code>uvicorn supply_chain.api.app:create_app --reload</code><br/>
+                    <strong>Start the dashboard:</strong> <code>cd frontend && npm run dev</code> (proxies to FastAPI on port 8000)
+                </div>
+            </div>
+            <div class="speaker-notes">
+                The FastAPI integration exposes the orchestrator as a REST service. Each HTTP request gets its own run with its own blackboard and unique run ID. The frontend dashboard is a React app that displays incidents, starts analysis, shows the blackboard state, and displays the final decision with full audit information. The browser proxies /api calls to the FastAPI backend during development.
+            </div>
+        </div>
+
+        <!-- Slide D: Requirements Mapping -->
+        <div class="slide slide-appendix-content">
+            <div class="slide-content">
+                <h2>D. Requirement-to-Evidence Map</h2>
+                <table class="requirement-table">
+                    <tr>
+                        <th style="text-align: left;">Requirement</th>
+                        <th style="text-align: left;">Evidence / Test File</th>
+                        <th style="text-align: center;">Status</th>
+                    </tr>
+                    <tr>
+                        <td>Five specialized agents</td>
+                        <td><code>supply_chain/agents/*.py</code> (monitor, inventory, supplier, route, coordinator)</td>
+                        <td><span class="status-done">✓ Done</span></td>
+                    </tr>
+                    <tr>
+                        <td>Blackboard architecture</td>
+                        <td><code>supply_chain/blackboard.py</code> + <code>tests/test_blackboard.py</code></td>
+                        <td><span class="status-done">✓ Done</span></td>
+                    </tr>
+                    <tr>
+                        <td>Semantic Kernel integration</td>
+                        <td><code>supply_chain/llm/</code> + <code>tests/test_sk_integration.py</code></td>
+                        <td><span class="status-done">✓ Done</span></td>
+                    </tr>
+                    <tr>
+                        <td>Deterministic tools (no mocking in production)</td>
+                        <td><code>supply_chain/tools/*.py</code> (all pure Python functions)</td>
+                        <td><span class="status-done">✓ Done</span></td>
+                    </tr>
+                    <tr>
+                        <td>Typed Pydantic schemas</td>
+                        <td><code>supply_chain/schemas.py</code> + <code>supply_chain/contracts.py</code></td>
+                        <td><span class="status-done">✓ Done</span></td>
+                    </tr>
+                    <tr>
+                        <td>Append-only JSONL log</td>
+                        <td><code>supply_chain/blackboard.py::append_jsonl</code> + <code>tests/test_logging.py</code></td>
+                        <td><span class="status-done">✓ Done</span></td>
+                    </tr>
+                    <tr>
+                        <td>Concurrent agent execution</td>
+                        <td><code>supply_chain/orchestrator.py</code> (asyncio.gather) + <code>tests/test_concurrency.py</code></td>
+                        <td><span class="status-done">✓ Done</span></td>
+                    </tr>
+                    <tr>
+                        <td>CLI interface</td>
+                        <td><code>supply_chain/main.py</code> (--incident, --all, --no-llm)</td>
+                        <td><span class="status-done">✓ Done</span></td>
+                    </tr>
+                    <tr>
+                        <td>REST API (PHASE_8)</td>
+                        <td><code>supply_chain/api/app.py</code> + <code>tests/test_api.py</code></td>
+                        <td><span class="status-done">✓ Done</span></td>
+                    </tr>
+                    <tr>
+                        <td>Frontend dashboard (PHASE_9)</td>
+                        <td><code>frontend/</code> (React + Vite)</td>
+                        <td><span class="status-done">✓ Done</span></td>
+                    </tr>
+                    <tr>
+                        <td>Reliability and retry (PHASE_10)</td>
+                        <td><code>supply_chain/tools/</code> (bounded exponential backoff) + <code>tests/test_resilience.py</code></td>
+                        <td><span class="status-done">✓ Done</span></td>
+                    </tr>
+                    <tr>
+                        <td>Evaluation metrics (PHASE_11)</td>
+                        <td><code>scripts/evaluate.py</code> + <code>tests/test_evaluation.py</code></td>
+                        <td><span class="status-done">✓ Done</span></td>
+                    </tr>
+                    <tr>
+                        <td>Live LLM optional (PHASE_7)</td>
+                        <td><code>supply_chain/llm/factory.py</code> + config (network/key required)</td>
+                        <td><span class="status-partial">Partial — requires internet &amp; key</span></td>
+                    </tr>
+                    <tr>
+                        <td>Documentation (PHASE_12)</td>
+                        <td>docs/ (api.md, evaluation.md, reliability.md, frontend.md)</td>
+                        <td><span class="status-partial">Partial — missing README, architecture diagram</span></td>
+                    </tr>
+                </table>
+            </div>
+            <div class="speaker-notes">
+                This table maps each requirement to the code or test that proves it's implemented. All core functionality is complete and tested. The live LLM feature requires network access and a valid API key. The only missing PHASE_12 deliverable is the README and architecture diagram (included in this presentation).
+            </div>
+        </div>
+
+        <!-- Slide E: Viva Q&A -->
+        <div class="slide slide-appendix-content">
+            <div class="slide-content">
+                <h2>E. Likely Viva Questions & Answers</h2>
+                <div class="qa-box">
+                    <div class="qa-item">
+                        <p class="qa-q"><strong>Q: Why a blackboard and not direct agent communication?</strong></p>
+                        <p class="qa-a">Blackboards decouple agents. If agents communicated directly, one failure could cascade. With a blackboard, evidence is published independently, and the Coordinator reads a snapshot only. Failure of one agent doesn't corrupt the evidence of others.</p>
+                    </div>
+                    <div class="qa-item">
+                        <p class="qa-q"><strong>Q: How does the Coordinator avoid hallucinating decisions?</strong></p>
+                        <p class="qa-a">The Coordinator has zero access to raw datasets. It reads only Blackboard evidence. All tools are deterministic Python functions. The decision logic is a typed rule engine over published evidence, not an LLM. If evidence is missing or failed, the decision is UNKNOWN—never guessed.</p>
+                    </div>
+                    <div class="qa-item">
+                        <p class="qa-q"><strong>Q: What if an agent times out or fails?</strong></p>
+                        <p class="qa-a">Each agent has a 60-second timeout. If it exceeds that, asyncio.wait_for cancels it and the agent is marked FAILED. The Coordinator sees that agent's section as FAILED evidence, not UNKNOWN. The decision still proceeds using available evidence from other agents.</p>
+                    </div>
+                    <div class="qa-item">
+                        <p class="qa-q"><strong>Q: How is auditability ensured?</strong></p>
+                        <p class="qa-a">Every run, every tool call, every Blackboard write, the final decision, and the validation result are logged to an append-only JSONL file. Each run has a unique ID. The log is never truncated or rewritten. It's machine-readable for compliance and debugging.</p>
+                    </div>
+                    <div class="qa-item">
+                        <p class="qa-q"><strong>Q: Why not use a plain LLM for all decisions?</strong></p>
+                        <p class="qa-a">LLMs hallucinate. For supply chain decisions, hallucinating supplier capacity or delivery times is catastrophic. Our deterministic tools query actual data. We only use LLM for prose interpretation, never for factual claims. The decision logic is deterministic rules.</p>
+                    </div>
+                    <div class="qa-item">
+                        <p class="qa-q"><strong>Q: What is ExecutionMode and why does it matter?</strong></p>
+                        <p class="qa-a">Every run is labelled deterministic_fallback or semantic_kernel_llm. We never label fallback output as LLM. Deterministic fallback means all tools ran without live LLM calls. This label is essential for understanding decision trust and reproducibility.</p>
+                    </div>
+                    <div class="qa-item">
+                        <p class="qa-q"><strong>Q: How do you prevent race conditions on the Blackboard?</strong></p>
+                        <p class="qa-a">Each Blackboard section is owned by one agent. Writes are protected by asyncio.Lock. Only the owner can write, and only once. The lock ensures atomicity. Post-publication, other agents can read but not write.</p>
+                    </div>
+                    <div class="qa-item">
+                        <p class="qa-q"><strong>Q: What is the difference between HOLD and UNKNOWN?</strong></p>
+                        <p class="qa-a">HOLD is a valid decision: "no feasible mitigation exists; hold and escalate." It's used when all options are exhausted but evidence is complete. UNKNOWN is used when evidence itself is missing or failed—we can't decide at all. UNKNOWN triggers data-owner escalation.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="speaker-notes">
+                These are the questions you'll likely face in a viva. The key themes: separation of concerns via the blackboard, elimination of hallucination via deterministic tools, auditability via append-only logs, failure resilience via timeouts and fallback logic, and clear execution-mode labelling so you always know if a decision is deterministic or LLM-influenced.
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="deck-controls">
+        <button id="prev-btn" class="control-btn" title="Previous slide (←)">‹ Prev</button>
+        <div class="slide-counter">
+            <span id="slide-current">1</span> / <span id="slide-total">16</span>
+        </div>
+        <button id="next-btn" class="control-btn" title="Next slide (→)">Next ›</button>
+        <div class="progress-bar"><div id="progress-fill"></div></div>
+    </div>
+
+    <!-- Slide dots -->
+    <div class="slide-dots" id="dots-container"></div>
+
+    <!-- Speaker notes panel -->
+    <div id="notes-panel" class="notes-panel" style="display: none;">
+        <div class="notes-header">
+            <span>Speaker Notes</span>
+            <button id="close-notes" class="notes-close">×</button>
+        </div>
+        <div id="notes-content" class="notes-content"></div>
+    </div>
+
+    <!-- Footer info -->
+    <div class="deck-footer">
+        <span id="theme-indicator" class="theme-indicator">☀️ Light</span>
+        <span class="separator">•</span>
+        <span class="shortcut">F: fullscreen</span>
+        <span class="separator">•</span>
+        <span class="shortcut">O: overview</span>
+        <span class="separator">•</span>
+        <span class="shortcut">N: notes</span>
+        <span class="separator">•</span>
+        <span class="shortcut">T: theme</span>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

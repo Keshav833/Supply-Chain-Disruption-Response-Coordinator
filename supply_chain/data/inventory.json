@@ -1,0 +1,8 @@
+[
+  {"warehouse_id": "WH-PUN-01", "product_id": "LAPTOP-001", "available_stock": 25, "safety_stock": 40},
+  {"warehouse_id": "WH-MUM-02", "product_id": "LAPTOP-001", "available_stock": 120, "safety_stock": 30},
+  {"warehouse_id": "WH-DEL-03", "product_id": "PHONE-002", "available_stock": 200, "safety_stock": 50},
+  {"warehouse_id": "WH-PUN-01", "product_id": "TABLET-003", "available_stock": 10, "safety_stock": 20},
+  {"warehouse_id": "WH-BLR-04", "product_id": "PHONE-002", "available_stock": 5, "safety_stock": 30},
+  {"warehouse_id": "WH-DEL-03", "product_id": "LAPTOP-001", "available_stock": 80, "safety_stock": 20}
+]

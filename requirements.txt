@@ -1,0 +1,18 @@
+# Direct dependencies, pinned to the versions verified in the project venv
+# (Python 3.11.4, Windows). Full transitive lock: requirements.lock.txt
+#
+# semantic-kernel 1.47.0 requires Python >= 3.11, openai >= 2.0 and
+# pydantic < 2.14. Its Google AI connector imports `google.genai`
+# (package google-genai, extra range >=1.51,<2.30), NOT the legacy
+# google-generativeai package, which is therefore not used.
+semantic-kernel==1.47.0
+google-genai==2.29.0
+openai==3.53.0
+pydantic==2.13.5
+pydantic-settings==2.16.3
+python-dotenv==1.2.4
+fastapi==0.163.2
+uvicorn[standard]==0.54.0
+httpx==0.28.1
+pytest==9.2.0
+pytest-asyncio==1.5.0

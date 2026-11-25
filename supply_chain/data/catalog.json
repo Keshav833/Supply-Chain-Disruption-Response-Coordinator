@@ -1,0 +1,15 @@
+{
+  "products": [
+    {"product_id": "LAPTOP-001", "name": "Business Laptop 14-inch", "unit": "units"},
+    {"product_id": "PHONE-002", "name": "Smartphone 6.1-inch", "unit": "units"},
+    {"product_id": "TABLET-003", "name": "Tablet 10-inch", "unit": "units"}
+  ],
+  "sites": [
+    {"site_id": "WH-PUN-01", "name": "Pune Central Warehouse", "city": "Pune", "site_type": "warehouse"},
+    {"site_id": "WH-MUM-02", "name": "Mumbai Port Warehouse", "city": "Mumbai", "site_type": "warehouse"},
+    {"site_id": "WH-DEL-03", "name": "Delhi North Warehouse", "city": "Delhi", "site_type": "warehouse"},
+    {"site_id": "WH-BLR-04", "name": "Bengaluru South Warehouse", "city": "Bengaluru", "site_type": "warehouse"},
+    {"site_id": "CUST-MUM", "name": "Mumbai Retail Distribution Centre", "city": "Mumbai", "site_type": "customer"},
+    {"site_id": "CUST-DEL", "name": "Delhi Retail Distribution Centre", "city": "Delhi", "site_type": "customer"}
+  ]
+}

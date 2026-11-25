@@ -1,0 +1,14 @@
+[
+  {"route_id": "RT-PUN-MUM-01", "origin": "WH-PUN-01", "destination": "CUST-MUM", "is_available": false,
+   "normal_transit_days": 1, "current_delay_days": 5, "availability_score": 0.0},
+  {"route_id": "RT-MUM-MUM-02", "origin": "WH-MUM-02", "destination": "CUST-MUM", "is_available": true,
+   "normal_transit_days": 1, "current_delay_days": 0, "availability_score": 0.98},
+  {"route_id": "RT-DEL-MUM-03", "origin": "WH-DEL-03", "destination": "CUST-MUM", "is_available": true,
+   "normal_transit_days": 3, "current_delay_days": 1, "availability_score": 0.80},
+  {"route_id": "RT-BLR-DEL-04", "origin": "WH-BLR-04", "destination": "CUST-DEL", "is_available": false,
+   "normal_transit_days": 2, "current_delay_days": 7, "availability_score": 0.0},
+  {"route_id": "RT-DEL-DEL-05", "origin": "WH-DEL-03", "destination": "CUST-DEL", "is_available": true,
+   "normal_transit_days": 1, "current_delay_days": 0, "availability_score": 0.99},
+  {"route_id": "RT-MUM-PUN-06", "origin": "WH-MUM-02", "destination": "WH-PUN-01", "is_available": true,
+   "normal_transit_days": 1, "current_delay_days": 0, "availability_score": 0.95}
+]
