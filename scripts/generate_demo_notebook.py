@@ -1,0 +1,244 @@
+﻿import json
+from pathlib import Path
+
+notebook = {
+    "cells": [
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "# Supply Chain Disruption Response Coordinator - Demo\n",
+                "\n",
+                "This notebook demonstrates the 6-agent system.\n",
+                "**Mode:** Deterministic (offline)"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": ["## Setup"]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "import asyncio\n",
+                "import json\n",
+                "import sys\n",
+                "from pathlib import Path"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "from supply_chain.orchestrator import SupplyChainOrchestrator\n",
+                "from supply_chain.contracts import AgentName\n",
+                "\n",
+                "print(f'Agents: {len(list(AgentName))}')"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "demo_log = Path('logs/demo_runs.jsonl')\n",
+                "demo_log.parent.mkdir(exist_ok=True)\n",
+                "if demo_log.exists():\n",
+                "    demo_log.unlink()\n",
+                "    print(f'Cleared old log')\n",
+                "\n",
+                "orchestrator = SupplyChainOrchestrator(log_path=demo_log)\n",
+                "print('Orchestrator ready')"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": ["## Scenario 1: Supplier Delay"]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "print('='*80)\n",
+                "print('SCENARIO 1: Supplier Delay')\n",
+                "print('='*80)\n",
+                "\n",
+                "incident_1 = {\n",
+                "    'incident_id': 'INC-1001',\n",
+                "    'disruption_type': 'supplier_delay',\n",
+                "    'affected_product_id': 'XYZ-001',\n",
+                "    'affected_warehouse_id': 'WH-NYC-01',\n",
+                "    'required_quantity': 100,\n",
+                "    'original_supplier_id': 'SUP-01',\n",
+                "    'reported_delay_days': 7,\n",
+                "    'deadline_days': 10,\n",
+                "    'description': 'Supplier SUP-01 delayed',\n",
+                "}\n",
+                "\n",
+                "print('\\nIncident details:')\n",
+                "for k, v in incident_1.items():\n",
+                "    if k != 'reported_at':\n",
+                "        print(f'  {k}: {v}')\n",
+                "\n",
+                "response_1 = await orchestrator.run(incident_1)\n",
+                "\n",
+                "print(f'\\nDecision: {response_1.decision.value}')\n",
+                "print(f'Selected Option: {response_1.selected_option_id}')\n",
+                "print(f'Outcome: {response_1.outcome}')\n",
+                "print(f'Run ID: {response_1.run_id}')\n",
+                "print(f'Duration: {response_1.duration_ms:.1f}ms')"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": ["## Scenario 2: Route Blockage"]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "print('\\n' + '='*80)\n",
+                "print('SCENARIO 2: Route Blockage')\n",
+                "print('='*80)\n",
+                "\n",
+                "incident_2 = {\n",
+                "    'incident_id': 'INC-1002',\n",
+                "    'disruption_type': 'route_blockage',\n",
+                "    'affected_product_id': 'ABC-050',\n",
+                "    'affected_warehouse_id': 'WH-NYC-01',\n",
+                "    'required_quantity': 200,\n",
+                "    'destination_id': 'CUST-MIA',\n",
+                "    'original_route_id': 'RT-NYC-MIA-01',\n",
+                "    'deadline_days': 5,\n",
+                "    'description': 'Route RT-NYC-MIA-01 blocked',\n",
+                "}\n",
+                "\n",
+                "print('\\nIncident details:')\n",
+                "for k, v in incident_2.items():\n",
+                "    if k != 'reported_at':\n",
+                "        print(f'  {k}: {v}')\n",
+                "\n",
+                "response_2 = await orchestrator.run(incident_2)\n",
+                "\n",
+                "print(f'\\nDecision: {response_2.decision.value}')\n",
+                "print(f'Selected Option: {response_2.selected_option_id}')\n",
+                "print(f'Outcome: {response_2.outcome}')\n",
+                "print(f'Run ID: {response_2.run_id}')\n",
+                "print(f'Duration: {response_2.duration_ms:.1f}ms')"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": ["## Scenario 3: Invalid Incident (Missing Data)"]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "print('\\n' + '='*80)\n",
+                "print('SCENARIO 3: Invalid Incident')\n",
+                "print('='*80)\n",
+                "\n",
+                "incident_3 = {\n",
+                "    'incident_id': 'INC-1003',\n",
+                "    'disruption_type': 'supplier_delay',\n",
+                "    'affected_product_id': 'DEF-100',\n",
+                "    'affected_warehouse_id': 'WH-LAX-02',\n",
+                "    'required_quantity': 50,\n",
+                "    'deadline_days': 7,\n",
+                "    'description': 'Missing original_supplier_id',\n",
+                "}\n",
+                "\n",
+                "print('\\nIncident details (INCOMPLETE):')\n",
+                "for k, v in incident_3.items():\n",
+                "    print(f'  {k}: {v}')\n",
+                "\n",
+                "response_3 = await orchestrator.run(incident_3)\n",
+                "\n",
+                "print(f'\\nDecision: {response_3.decision.value}')\n",
+                "print(f'Outcome: {response_3.outcome}')\n",
+                "print(f'Error: {response_3.justification}')\n",
+                "print(f'Run ID: {response_3.run_id}')"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": ["## Demo Log Output"]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "print('\\n' + '='*80)\n",
+                "print('DEMO LOG FILE: logs/demo_runs.jsonl')\n",
+                "print('='*80)\n",
+                "\n",
+                "if demo_log.exists():\n",
+                "    with open(demo_log) as f:\n",
+                "        lines = f.readlines()\n",
+                "    \n",
+                "    print(f'\\nTotal entries: {len(lines)}')\n",
+                "    print('\\nLAST 3 LOG ENTRIES:')\n",
+                "    print('-'*80)\n",
+                "    \n",
+                "    for i, line in enumerate(lines[-3:], 1):\n",
+                "        try:\n",
+                "            entry = json.loads(line)\n",
+                "            print(f'\\nEntry {len(lines) - 3 + i}:')\n",
+                "            print(f'  Incident: {entry.get(\"incident_id\", \"N/A\")}')\n",
+                "            print(f'  Agent: {entry.get(\"agent_name\", \"N/A\")}')\n",
+                "            print(f'  Action: {entry.get(\"action\", \"N/A\")}')\n",
+                "            print(f'  Section: {entry.get(\"section_updated\", \"N/A\")}')\n",
+                "            print(f'  Status: {entry.get(\"status\", \"N/A\")}')\n",
+                "        except:\n",
+                "            print(f'\\nEntry {len(lines) - 3 + i}: (parse error)')\n",
+                "else:\n",
+                "    print('Log file not found')"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## Summary\n",
+                "\n",
+                "Demo complete! All results written to logs/demo_runs.jsonl"
+            ]
+        }
+    ],
+    "metadata": {
+        "kernelspec": {
+            "display_name": "Python 3",
+            "language": "python",
+            "name": "python3"
+        },
+        "language_info": {
+            "name": "python",
+            "version": "3.11.0"
+        }
+    },
+    "nbformat": 4,
+    "nbformat_minor": 2
+}
+
+Path("notebooks/demo.ipynb").write_text(json.dumps(notebook, indent=1))
+print("Created: notebooks/demo.ipynb")

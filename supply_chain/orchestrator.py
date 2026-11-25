@@ -34,6 +34,7 @@ from supply_chain.agents.coordinator_agent import CoordinatorAgent
 from supply_chain.agents.inventory_agent import InventoryAgent
 from supply_chain.agents.monitor_agent import MonitorAgent
 from supply_chain.agents.route_agent import RouteAgent
+from supply_chain.agents.cost_agent import CostAgent
 from supply_chain.agents.supplier_agent import SupplierAgent
 from supply_chain.blackboard import Blackboard, append_jsonl
 from supply_chain.contracts import AgentName, AgentOutput
@@ -109,7 +110,7 @@ class SupplyChainOrchestrator:
         self.monitor = monitor or MonitorAgent(self.interpreter, dataset)
         self.specialists = list(specialists) if specialists is not None else [
             InventoryAgent(self.interpreter, dataset), SupplierAgent(self.interpreter, dataset),
-            RouteAgent(self.interpreter, dataset)]
+            RouteAgent(self.interpreter, dataset), CostAgent(self.interpreter, dataset)]
         self.coordinator = coordinator or CoordinatorAgent(self.interpreter)
         names = [a.name for a in self.specialists]
         if len(set(names)) != len(names) or AgentName.MONITOR in names or AgentName.COORDINATOR in names:

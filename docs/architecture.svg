@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1400 1000" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .box { fill: #f5f5f5; stroke: #333; stroke-width: 2; }
+      .box-input { fill: #e3f2fd; stroke: #1976d2; stroke-width: 2; }
+      .box-gate { fill: #fff3e0; stroke: #f57c00; stroke-width: 2; }
+      .box-agent { fill: #e8f5e9; stroke: #388e3c; stroke-width: 2; }
+      .box-bb { fill: #f3e5f5; stroke: #7b1fa2; stroke-width: 2; }
+      .box-decision { fill: #fce4ec; stroke: #c2185b; stroke-width: 2; }
+      .box-output { fill: #e0f2f1; stroke: #00796b; stroke-width: 2; }
+      .box-log { fill: #ede7f6; stroke: #512da8; stroke-width: 2; }
+      .label { font-family: Arial, sans-serif; font-size: 12px; text-anchor: middle; }
+      .title { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; text-anchor: middle; }
+      .subtitle { font-family: Arial, sans-serif; font-size: 11px; text-anchor: middle; fill: #666; }
+      .arrow { stroke: #333; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .arrow-fail { stroke: #d32f2f; stroke-width: 2; fill: none; marker-end: url(#arrowhead-fail); stroke-dasharray: 5,5; }
+      .parallel { stroke: #999; stroke-width: 1; fill: none; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#333" />
+    </marker>
+    <marker id="arrowhead-fail" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#d32f2f" />
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="700" y="30" class="title" font-size="18">Supply Chain Disruption Response Coordinator - Architecture</text>
+
+  <!-- TIER 1: Input -->
+  <rect x="600" y="50" width="200" height="60" class="box-input" rx="4"/>
+  <text x="700" y="73" class="title">📥 Incident Input</text>
+  <text x="700" y="90" class="subtitle">(DisruptionIncident)</text>
+
+  <!-- Arrow down -->
+  <line x1="700" y1="110" x2="700" y2="140" class="arrow"/>
+
+  <!-- TIER 2: Monitor Gate -->
+  <rect x="550" y="140" width="300" height="80" class="box-gate" rx="4"/>
+  <text x="700" y="165" class="title">🚪 Monitor Gate</text>
+  <text x="700" y="183" class="subtitle">validate_disruption</text>
+  <text x="700" y="198" class="subtitle">identify_affected_sites</text>
+  <text x="700" y="213" class="subtitle" font-size="10">Writes: incident_assessment</text>
+
+  <!-- Monitor outputs -->
+  <line x1="650" y1="220" x2="600" y2="250" class="arrow"/>
+  <text x="580" y="245" class="subtitle">✓ Valid</text>
+
+  <line x1="750" y1="220" x2="800" y2="250" class="arrow-fail"/>
+  <text x="820" y="245" class="subtitle">✗ Invalid</text>
+
+  <!-- Rejected box (right) -->
+  <rect x="750" y="250" width="150" height="50" class="box-decision" rx="4"/>
+  <text x="825" y="272" class="title">❌ Rejected</text>
+  <text x="825" y="287" class="subtitle">(outcome: rejected)</text>
+
+  <!-- TIER 3: Blackboard -->
+  <rect x="450" y="280" width="500" height="100" class="box-bb" stroke-width="3" rx="4"/>
+  <text x="700" y="303" class="title">📋 Shared Blackboard State</text>
+  <text x="700" y="320" class="subtitle">(write-once, owner-only, asyncio.Lock)</text>
+  <text x="460" y="340" class="subtitle" font-size="10">incident_assessment (Monitor) | inventory_findings (Inventory)</text>
+  <text x="460" y="354" class="subtitle" font-size="10">supplier_findings (Supplier) | route_findings (Route)</text>
+  <text x="460" y="368" class="subtitle" font-size="10" fill="#c2185b">Evidence Status: AVAILABLE | UNKNOWN | FAILED</text>
+
+  <!-- Valid path joins blackboard -->
+  <line x1="600" y1="250" x2="600" y2="280" class="arrow"/>
+
+  <!-- TIER 4: Parallel Investigation -->
+  <text x="700" y="420" class="title" font-size="13">⚡ Parallel Investigation (asyncio.gather, 60s timeout each)</text>
+
+  <!-- Inventory Agent -->
+  <rect x="80" y="440" width="220" height="100" class="box-agent" rx="4"/>
+  <text x="190" y="463" class="title">📦 InventoryAgent</text>
+  <text x="190" y="480" class="subtitle">get_inventory</text>
+  <text x="190" y="495" class="subtitle">calculate_stock_shortage</text>
+  <text x="190" y="510" class="subtitle" font-size="10" fill="#c2185b">Owns: inventory_findings</text>
+
+  <!-- Supplier Agent -->
+  <rect x="360" y="440" width="220" height="100" class="box-agent" rx="4"/>
+  <text x="470" y="463" class="title">🏭 SupplierAgent</text>
+  <text x="470" y="480" class="subtitle">find_alternative_suppliers</text>
+  <text x="470" y="495" class="subtitle">check_supplier_capacity</text>
+  <text x="470" y="510" class="subtitle" font-size="10" fill="#c2185b">Owns: supplier_findings</text>
+
+  <!-- Route Agent -->
+  <rect x="640" y="440" width="220" height="100" class="box-agent" rx="4"/>
+  <text x="750" y="463" class="title">🚚 RouteAgent</text>
+  <text x="750" y="480" class="subtitle">get_available_routes</text>
+  <text x="750" y="495" class="subtitle">calculate_route_delay</text>
+  <text x="750" y="510" class="subtitle" font-size="10" fill="#c2185b">Owns: route_findings</text>
+
+  <!-- Cost Agent (optional/future) -->
+  <rect x="920" y="440" width="220" height="100" class="box" stroke-dasharray="5,5" rx="4"/>
+  <text x="1030" y="463" class="title">💰 CostAgent (Future)</text>
+  <text x="1030" y="480" class="subtitle">calculate_cost</text>
+  <text x="1030" y="495" class="subtitle">optimize_budget</text>
+  <text x="1030" y="510" class="subtitle" font-size="10" fill="#999">Owns: cost_findings</text>
+
+  <!-- Arrows from agents down -->
+  <line x1="190" y1="540" x2="190" y2="570" class="arrow"/>
+  <line x1="470" y1="540" x2="470" y2="570" class="arrow"/>
+  <line x1="750" y1="540" x2="750" y2="570" class="arrow"/>
+  <line x1="1030" y1="540" x2="1030" y2="570" class="arrow" stroke-dasharray="5,5"/>
+
+  <!-- TIER 5: Evidence boxes (collected on blackboard) -->
+  <rect x="130" y="570" width="120" height="60" class="box-bb" rx="4"/>
+  <text x="190" y="590" class="subtitle" font-size="11" font-weight="bold">inventory_findings</text>
+  <text x="190" y="605" class="subtitle" font-size="9">(usable stock,</text>
+  <text x="190" y="617" class="subtitle" font-size="9">replenishment)</text>
+
+  <rect x="410" y="570" width="120" height="60" class="box-bb" rx="4"/>
+  <text x="470" y="590" class="subtitle" font-size="11" font-weight="bold">supplier_findings</text>
+  <text x="470" y="605" class="subtitle" font-size="9">(viable suppliers,</text>
+  <text x="470" y="617" class="subtitle" font-size="9">capacity checks)</text>
+
+  <rect x="690" y="570" width="120" height="60" class="box-bb" rx="4"/>
+  <text x="750" y="590" class="subtitle" font-size="11" font-weight="bold">route_findings</text>
+  <text x="750" y="605" class="subtitle" font-size="9">(viable routes,</text>
+  <text x="750" y="617" class="subtitle" font-size="9">delivery days)</text>
+
+  <!-- Arrow to snapshot -->
+  <line x1="190" y1="630" x2="400" y2="670" class="arrow" stroke="#7b1fa2" stroke-width="2"/>
+  <line x1="470" y1="630" x2="550" y2="670" class="arrow" stroke="#7b1fa2" stroke-width="2"/>
+  <line x1="750" y1="630" x2="650" y2="670" class="arrow" stroke="#7b1fa2" stroke-width="2"/>
+
+  <!-- TIER 6: Evidence Snapshot -->
+  <rect x="350" y="670" width="700" height="70" class="box-bb" stroke-width="3" rx="4"/>
+  <text x="700" y="693" class="title">📸 Evidence Snapshot (read-only)</text>
+  <text x="700" y="710" class="subtitle">Status: AVAILABLE | UNKNOWN (never published) | FAILED (agent failed)</text>
+  <text x="700" y="725" class="subtitle" font-size="10">Coordinator reads this snapshot only. No access to raw datasets.</text>
+
+  <!-- Arrow to Coordinator -->
+  <line x1="700" y1="740" x2="700" y2="770" class="arrow" stroke="#c2185b" stroke-width="2"/>
+
+  <!-- TIER 7: Coordinator -->
+  <rect x="500" y="770" width="400" height="120" class="box-decision" rx="4"/>
+  <text x="700" y="793" class="title">🤔 CoordinatorAgent</text>
+  <text x="700" y="810" class="subtitle">1. read_blackboard_evidence (snapshot)</text>
+  <text x="700" y="825" class="subtitle">2. Try LLM proposal if live (guardrail check)</text>
+  <text x="700" y="840" class="subtitle">3. Fallback: deterministic decision logic</text>
+  <text x="700" y="855" class="subtitle">4. validate_mitigation_decision (independent gate)</text>
+  <text x="700" y="870" class="subtitle" font-size="10" fill="#c2185b">Decision: REORDER | REROUTE | HOLD | UNKNOWN</text>
+
+  <!-- Arrow to output -->
+  <line x1="700" y1="890" x2="700" y2="920" class="arrow" stroke="#c2185b" stroke-width="2"/>
+
+  <!-- TIER 8: Output & Logging -->
+  <rect x="400" y="920" width="600" height="50" class="box-output" rx="4"/>
+  <text x="700" y="937" class="title">📢 MitigationResult + 📜 Notifications</text>
+  <text x="700" y="952" class="subtitle">decision, option_id, justification, parties_to_notify, authorized=False</text>
+
+  <!-- Arrow to log -->
+  <line x1="700" y1="970" x2="700" y2="1000" class="arrow"/>
+
+  <!-- Legend box (bottom right) -->
+  <rect x="1050" y="420" width="310" height="140" fill="#fffef0" stroke="#999" stroke-width="1" rx="4"/>
+  <text x="1205" y="438" class="title" font-size="12">🔑 Key Principles</text>
+  <text x="1060" y="455" class="subtitle" font-size="10" text-anchor="start">✓ Agents never talk directly</text>
+  <text x="1060" y="468" class="subtitle" font-size="10" text-anchor="start">✓ Write-once, owner-only sections</text>
+  <text x="1060" y="481" class="subtitle" font-size="10" text-anchor="start">✓ asyncio.Lock prevents race conditions</text>
+  <text x="1060" y="494" class="subtitle" font-size="10" text-anchor="start">✓ Coordinator reads snapshot only</text>
+  <text x="1060" y="507" class="subtitle" font-size="10" text-anchor="start">✓ Independent validation gate</text>
+  <text x="1060" y="520" class="subtitle" font-size="10" text-anchor="start">✓ Evidence status tracked explicitly</text>
+  <text x="1060" y="533" class="subtitle" font-size="10" text-anchor="start">✓ Append-only JSONL audit log</text>
+
+  <!-- Rejected path merges to output -->
+  <line x1="825" y1="300" x2="825" y2="910" class="arrow-fail"/>
+  <line x1="825" y1="910" x2="700" y2="910" class="arrow-fail"/>
+
+</svg>

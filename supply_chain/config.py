@@ -1,4 +1,4 @@
-"""
+﻿"""
 Application configuration loaded from environment variables (.env supported).
 
 API keys are read ONLY from the environment; they are never hardcoded.
@@ -17,7 +17,10 @@ from dotenv import load_dotenv
 
 from supply_chain.schemas import ExecutionMode
 
-load_dotenv()
+try:
+    load_dotenv()
+except (OSError, PermissionError):
+    pass  # .env file not readable in some environments
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -132,3 +135,4 @@ MAX_ACCEPTABLE_LEAD_DAYS: int = 10
 # Legacy constants used by the pre-existing prototype tools.
 SAFETY_STOCK_MULTIPLIER: float = 1.2
 MIN_ROUTE_AVAILABILITY_SCORE: float = 0.5
+

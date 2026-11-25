@@ -67,7 +67,7 @@ async def running(bb, *agents):
 
 def test_section_ownership_map_matches_contracts():
     assert SECTION_OWNER == {s: a for a, s in BLACKBOARD_SECTION.items()}
-    assert len(SECTION_OWNER) == 5
+    assert len(SECTION_OWNER) == 6
 
 
 async def test_each_agent_can_write_only_its_own_section():

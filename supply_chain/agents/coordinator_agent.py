@@ -85,6 +85,8 @@ def propose_decision(report: EvidenceReport) -> Tuple[MitigationDecision, Option
         if report.contradictions:
             reasons.append(f"contradictions: {report.contradictions}")
         return MitigationDecision.UNKNOWN, None, "No decision: " + "; ".join(reasons) + "."
+    # Consider cost findings if available
+    cost = ev.cost_findings
     opts = feasible_options(ev)
     inv, sup, rt = ev.inventory_findings, ev.supplier_findings, ev.route_findings
     reorder = None

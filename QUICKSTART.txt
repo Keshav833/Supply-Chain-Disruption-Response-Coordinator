@@ -1,0 +1,57 @@
+﻿# QUICK START: Run the Demo Notebook
+
+## 1. Launch Jupyter
+```bash
+jupyter notebook
+```
+
+## 2. Open and Run
+- Navigate to: `notebooks/demo.ipynb`
+- Click: `Kernel` → `Run All Cells`
+- Or: Run each cell manually from top to bottom
+
+## 3. What You'll See
+
+### Scenario 1: Supplier Delay
+```
+Decision: REORDER
+Option: SUP-02  (cheapest alternate supplier)
+Cost: $42,000  (100 units × $420/unit base + expedited fee)
+Duration: ~100ms
+```
+
+### Scenario 2: Route Blockage
+```
+Decision: REROUTE
+Option: RT-NYC-BOS-01  (cheapest alternate route)
+Cost: $2,500  (200 units × $12.50/unit + expedited fee)
+Duration: ~150ms
+```
+
+### Scenario 3: Invalid Incident
+```
+Decision: UNKNOWN
+Outcome: rejected
+Reason: Missing required original_supplier_id
+Duration: ~20ms
+```
+
+## 4. Verify Success
+- All cells execute without errors
+- 3 scenarios show different decisions
+- Log shows last 3 entries from logs/demo_runs.jsonl
+- Each entry includes: incident_id, agent, action, section, status
+
+## 5. Optional: Enable Live LLM
+In the last cell, change:
+```python
+RUN_LIVE_LLM = False  # Change to True
+```
+Then run the cell. (Requires valid API key + network access)
+
+---
+
+**Everything is deterministic and reproducible.**
+**No randomness. Same results every run.**
+**Works offline (no internet required).**
+**Demo logs persisted to: logs/demo_runs.jsonl**

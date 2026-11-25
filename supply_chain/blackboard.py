@@ -43,6 +43,8 @@ from supply_chain.contracts import BLACKBOARD_SECTION, AgentName, BlackboardEvid
 from supply_chain.schemas import (
     AgentLogEntry,
     AgentStatus,
+    CostFindings,
+    CostFindings,
     DisruptionIncident,
     EvidenceStatus,
     ExecutionMode,
@@ -76,10 +78,11 @@ SECTION_TYPE: Dict[str, Type[BaseModel]] = {
     "inventory_findings": InventoryFindings,
     "supplier_findings": SupplierFindings,
     "route_findings": RouteFindings,
+    "cost_findings": CostFindings,
     "mitigation_decision": MitigationResult,
 }
 
-EVIDENCE_SECTIONS = ("incident_assessment", "inventory_findings", "supplier_findings", "route_findings")
+EVIDENCE_SECTIONS = ("incident_assessment", "inventory_findings", "supplier_findings", "route_findings", "cost_findings")
 _LOG_WRITE_LOCK = threading.Lock()
 
 

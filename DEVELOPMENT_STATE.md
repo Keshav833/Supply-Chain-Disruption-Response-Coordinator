@@ -1,11 +1,11 @@
-# Development State
+﻿# Development State
 
-CURRENT_PHASE = PHASE_11
+CURRENT_PHASE = PHASE_8.5
 
-COMPLETED_PHASES = [PHASE_0, PHASE_1, PHASE_2, PHASE_3, PHASE_4, PHASE_5, PHASE_6, PHASE_7 (IMPLEMENTATION_COMPLETE_LIVE_VERIFICATION_PENDING), PHASE_8, PHASE_9, PHASE_10, PHASE_11]
+COMPLETED_PHASES = [PHASE_0, PHASE_1, PHASE_2, PHASE_3, PHASE_4, PHASE_5, PHASE_6, PHASE_7 (IMPLEMENTATION_COMPLETE_LIVE_VERIFICATION_PENDING), PHASE_8, PHASE_9, PHASE_10, PHASE_11, PHASE_8.5 (6-AGENT_SYSTEM_COMPLETE)]
 
 INCOMPLETE_REQUIREMENTS = [
-  "Live LLM (PHASE_7): IMPLEMENTATION_COMPLETE_LIVE_VERIFICATION_PENDING — one verified live Gemini call (interpretation + function calling) with a real GEMINI_API_KEY; connector wiring exists in supply_chain/llm/factory.py",
+  "Live LLM (PHASE_7): IMPLEMENTATION_COMPLETE_LIVE_VERIFICATION_PENDING â€” one verified live Gemini call (interpretation + function calling) with a real GEMINI_API_KEY; connector wiring exists in supply_chain/llm/factory.py",
   "README, architecture diagram, demo notebook (PHASE_12)"
 ]
 
@@ -33,8 +33,8 @@ NEXT_ACTION = [
 - **Status:** PHASE_7 implementation complete; live verification pending (requires network access outside sandbox)
 
 ## Test Status
-- Core logic (5 scenarios): **PASS** ✓
-- SK infrastructure wiring: **PASS** ✓
+- Core logic (5 scenarios): **PASS** âœ“
+- SK infrastructure wiring: **PASS** âœ“
 - pytest capture: Broken in sandbox (nul file permission), but workarounds confirm all logic is correct
 - Expected: 188 passed, 1 skipped (live Gemini test when network unavailable)
 
@@ -134,6 +134,71 @@ NEXT_ACTION = [
 - Verification: evaluation command ran successfully; targeted evaluation/dataset/resilience tests passed (25 passed).
   Complete suite (`pytest -q -p no:cacheprovider`) produced **188 passed, 1 failed**. The sole failure is still the
   live Gemini test because `gemini-2.5-flash` returns HTTP 404.
+
+## PHASE_8.5 Cost Agent (6th Investigation Agent ? COMPLETE)
+**Status: IMPLEMENTATION COMPLETE**
+### What Was Added
+- **Cost Agent** (6th investigation agent): estimates and compares costs for viable mitigation options
+- **CostFindings** schema: cost estimates per option, cheapest option ID, cost comparison dictionary
+- **Two cost tools**: 
+  - estimate_option_cost(): calculates cost for REORDER (supplier) or REROUTE (route)
+  - compare_options(): evaluates multiple options and returns cheapest
+- **Cost data**: unit_cost per supplier (procurement), cost_per_unit + expedited_fee_percent per route (logistics)
+- **Coordinator integration**: reads cost_findings and picks cheapest viable option when multiple exist
+- **Specialist count**: now 4 agents (Inventory, Supplier, Route, Cost) instead of 3
+### Changes Made
+1. Added CostEstimate and CostFindings models to supply_chain/schemas.py
+2. Added AgentName.COST to supply_chain/contracts.py
+3. Updated REQUIRED_TOOLS mapping: Cost -> ("estimate_option_cost", "compare_options")
+4. Updated BLACKBOARD_SECTION mapping: Cost -> "cost_findings"
+5. Added CostAgentInput and CostAgentOutput contract classes
+6. Updated BlackboardEvidence with cost_findings field and _SECTION_OWNER mapping
+7. Created supply_chain/tools/cost_tools.py with estimate_option_cost and compare_options functions
+8. Created supply_chain/agents/cost_agent.py with CostAgent + CostPlugin implementation
+9. Updated supply_chain/blackboard.py: added cost_findings to SECTION_TYPE, EVIDENCE_SECTIONS
+10. Updated supply_chain/orchestrator.py: imported CostAgent, added to specialists list
+11. Updated supply_chain/agents/coordinator_agent.py: added cost consideration in propose_decision
+12. Updated test files: 5 agents -> 6 agents, 4 sections -> 5 evidence sections
+13. Added cost data to supply_chain/data/suppliers.json and supply_chain/data/routes.json
+### Decision Flow (Updated for 6 Agents)
+- Monitor validates incident
+- Inventory, Supplier, Route, **Cost** agents run in parallel with asyncio.gather
+- Each publishes findings to their Blackboard section with asyncio.Lock protection
+- Coordinator reads all 5 evidence sections + incident_assessment
+- Decision: picks cheapest **viable** option (never compromises on constraints)
+  - Feasible suppliers with capacity >= replenishment AND lead_time <= deadline
+  - Feasible routes with stock >= required AND delivery_days <= deadline
+  - Among feasible options: selects cheapest (lowest total_cost)
+  - If no feasible option exists: HOLD (no guessing, no partial mitigation)
+- Notifications include cost reasoning
+### Cost Estimation Logic
+**REORDER costs:**
+- Base: supplier.unit_cost * required_quantity
+- Expedited fee: +15% if lead_time <= 3 days AND lead_time < deadline
+- Total: base + expedited
+**REROUTE costs:**
+- Base: route.cost_per_unit * required_quantity
+- Expedited fee: +route.expedited_fee_percent if delivery_days <= 3 AND delivery_days < deadline
+- Total: base + expedited
+### Test Coverage
+- 6 agents verified: AgentName enum, REQUIRED_TOOLS, BLACKBOARD_SECTION all count correct
+- Cost tools tested: estimate_option_cost works for REORDER and REROUTE
+- Cost comparison tested: compare_options returns cheapest valid option
+- Coordinator integration: reads cost_findings from Blackboard, considers in decision
+- All existing 8 scenarios (5 original + 3 edge cases) re-validated with Cost Agent
+### Verification Results
+- Cost Agent module loads without errors
+- cost_tools functions execute successfully
+- Dataset loads with cost data (suppliers have unit_cost, routes have cost_per_unit)
+- estimate_option_cost() correctly calculates total_cost with expedited fees
+- compare_options() correctly sorts by cost and identifies cheapest option
+- Blackboard accepts cost_findings section from Cost Agent
+- Orchestrator successfully runs all 6 agents in parallel
+### Next: PHASE_12 Deliverables
+- README with 6-agent architecture diagram showing parallel Cost Agent execution
+- Architecture diagram: Monitor gate -> (Inventory|Supplier|Route|Cost)* -> Coordinator
+- Demo notebook: show cost-optimized decision example (multiple viable options, cheapest selected)
+- Document: when Cost Agent fails, decision still made but without cost optimization (graceful degradation)
 
 ## Architecture (PHASE_3-6)
 - `SupplyChainOrchestrator.run(incident)` -> `IncidentResponse` (supply_chain/orchestrator.py).

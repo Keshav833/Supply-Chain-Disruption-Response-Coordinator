@@ -331,6 +331,27 @@ class RouteFindings(BaseModel):
 # Monitor assessment
 # ---------------------------------------------------------------------------
 
+
+
+class CostEstimate(BaseModel):
+    """Cost estimate for one mitigation option."""
+    option_type: Literal["REORDER", "REROUTE"]
+    option_id: str = Field(..., min_length=1)
+    cost_per_unit: float = Field(..., ge=0)
+    total_cost: float = Field(..., ge=0)
+    cost_category: str = Field(..., min_length=1)
+    breakdown: Dict[str, float] = Field(default_factory=dict)
+
+
+class CostFindings(BaseModel):
+    """Cost Agent findings: cost estimates and recommendations."""
+    incident_id: str = Field(..., pattern=INCIDENT_ID_PATTERN)
+    cost_estimates: List[CostEstimate] = Field(default_factory=list)
+    cheapest_option: Optional[str] = None
+    cost_comparison: Dict[str, float] = Field(default_factory=dict)
+    recommendation: str = Field(default="")
+
+
 class IncidentAssessment(BaseModel):
     incident_id: str
     is_valid: bool

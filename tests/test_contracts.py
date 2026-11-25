@@ -24,8 +24,8 @@ FINDINGS = InventoryFindings(
 INV_TOOLS = ["get_inventory", "calculate_stock_shortage"]
 
 
-def test_five_agents_each_have_two_required_tools_and_one_section():
-    assert len(AgentName) == 5
+def test_six_agents_each_have_two_required_tools_and_one_section():
+    assert len(AgentName) == 6
     assert set(REQUIRED_TOOLS) == set(AgentName) == set(BLACKBOARD_SECTION)
     assert all(len(set(t)) == 2 for t in REQUIRED_TOOLS.values())
     assert REQUIRED_TOOLS[AgentName.COORDINATOR] == ("read_blackboard_evidence", "validate_mitigation_decision")

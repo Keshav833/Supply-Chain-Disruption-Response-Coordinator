@@ -38,6 +38,7 @@ from supply_chain.schemas import (
     MitigationResult,
     Notification,
     RouteFindings,
+    CostFindings,
     SupplierFindings,
 )
 
@@ -48,6 +49,7 @@ class AgentName(str, Enum):
     SUPPLIER = "SupplierAgent"
     ROUTE = "RouteAgent"
     COORDINATOR = "CoordinatorAgent"
+    COST = "CostAgent"
 
 
 REQUIRED_TOOLS: Dict[AgentName, tuple[str, str]] = {
@@ -56,6 +58,7 @@ REQUIRED_TOOLS: Dict[AgentName, tuple[str, str]] = {
     AgentName.SUPPLIER: ("find_alternative_suppliers", "check_supplier_capacity"),
     AgentName.ROUTE: ("get_available_routes", "calculate_route_delay"),
     AgentName.COORDINATOR: ("read_blackboard_evidence", "validate_mitigation_decision"),
+    AgentName.COST: ("estimate_option_cost", "compare_options"),
 }
 
 BLACKBOARD_SECTION: Dict[AgentName, str] = {
@@ -64,6 +67,7 @@ BLACKBOARD_SECTION: Dict[AgentName, str] = {
     AgentName.SUPPLIER: "supplier_findings",
     AgentName.ROUTE: "route_findings",
     AgentName.COORDINATOR: "mitigation_decision",
+    AgentName.COST: "cost_findings",
 }
 
 
@@ -215,6 +219,19 @@ class RouteAgentOutput(AgentOutput):
 # Agent 5: Coordinator (Blackboard evidence ONLY)
 # ---------------------------------------------------------------------------
 
+
+
+class CostAgentInput(AgentInput):
+    """Cost Agent input (reads from Blackboard)."""
+    pass
+
+
+class CostAgentOutput(AgentOutput):
+    agent: ClassVar[AgentName] = AgentName.COST
+    payload_field: ClassVar[str] = "findings"
+    findings: Optional[CostFindings] = None
+
+
 class BlackboardEvidence(BaseModel):
     """Read-only snapshot of Blackboard sections. Missing sections stay None."""
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -224,6 +241,7 @@ class BlackboardEvidence(BaseModel):
     inventory_findings: Optional[InventoryFindings] = None
     supplier_findings: Optional[SupplierFindings] = None
     route_findings: Optional[RouteFindings] = None
+    cost_findings: Optional[CostFindings] = None
     agent_status: Dict[str, AgentStatus] = Field(default_factory=dict)
 
     _SECTION_OWNER: ClassVar[Dict[str, AgentName]] = {
@@ -231,6 +249,7 @@ class BlackboardEvidence(BaseModel):
         "inventory_findings": AgentName.INVENTORY,
         "supplier_findings": AgentName.SUPPLIER,
         "route_findings": AgentName.ROUTE,
+        "cost_findings": AgentName.COST,
     }
 
     def evidence_status(self) -> Dict[str, EvidenceStatus]:

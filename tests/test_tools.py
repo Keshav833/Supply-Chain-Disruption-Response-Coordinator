@@ -35,7 +35,7 @@ def incident(**kw):
 
 
 def test_every_agent_has_two_real_tool_functions():
-    assert len(REQUIRED_TOOLS) == 5
+    assert len(REQUIRED_TOOLS) == 6
     for agent, tools in REQUIRED_TOOLS.items():
         assert len(tools) == 2
         for t in tools:
