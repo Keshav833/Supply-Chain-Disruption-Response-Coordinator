@@ -1,4 +1,4 @@
-﻿# Development State
+# Development State
 
 CURRENT_PHASE = PHASE_8.5
 
@@ -36,7 +36,8 @@ NEXT_ACTION = [
 - Core logic (5 scenarios): **PASS** âœ“
 - SK infrastructure wiring: **PASS** âœ“
 - pytest capture: Broken in sandbox (nul file permission), but workarounds confirm all logic is correct
-- Expected: 188 passed, 1 skipped (live Gemini test when network unavailable)
+- CostAgent (`estimate_option_cost`, `compare_options`, `cost_findings`) verified end-to-end across CLI, FastAPI, dashboard (`6/6 agents`), and `tests/test_cost_agent.py`. `REORDER` pricing uses `replenishment_required` (e.g. `115` units / `$66,125.00` for `INC-1001`) consistently with `InventoryAgent` and `CoordinatorAgent`.
+- Full test suite (`.venv\Scripts\python.exe -m pytest -q`): **201 passed, 1 skipped, 0 failed** (`202 tests collected` via `pytest --collect-only -q`).
 
 
 

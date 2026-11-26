@@ -8,6 +8,7 @@ import asyncio
 from typing import Any, Dict, Optional
 
 from supply_chain.agents.coordinator_agent import CoordinatorAgent
+from supply_chain.agents.cost_agent import CostAgent
 from supply_chain.agents.inventory_agent import InventoryAgent
 from supply_chain.agents.monitor_agent import MonitorAgent
 from supply_chain.agents.route_agent import RouteAgent
@@ -26,5 +27,7 @@ async def run_pipeline(incident: DisruptionIncident, dataset=None, interpreter=N
                                RouteAgent(interpreter, dataset)) if a.name not in skip]
     for agent, out in zip(specialists, await asyncio.gather(*(a.run(bb) for a in specialists))):
         outputs[agent.name] = out
+    if AgentName.COST not in skip:
+        outputs[AgentName.COST] = await CostAgent(interpreter, dataset).run(bb)
     outputs[AgentName.COORDINATOR] = await CoordinatorAgent(interpreter).run(bb)
     return {"blackboard": bb, "outputs": outputs, "coordinator": outputs[AgentName.COORDINATOR]}

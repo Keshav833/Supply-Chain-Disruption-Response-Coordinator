@@ -1,6 +1,6 @@
-﻿"""Cost Agent (Agent 6): Estimates and compares costs for mitigation options.
+"""Cost Agent (Agent 6): Estimates and compares costs for mitigation options.
 
-Tools (SK plugin "CostTools"): estimate_option_cost, compare_options.
+Tools (SK plugin "CostTools": estimate_option_cost, compare_options.
 Reads: incident_assessment, inventory_findings, supplier_findings, route_findings.
 Writes: cost_findings.
 Runs concurrently with Inventory/Supplier/Route agents after Monitor validation.
@@ -10,7 +10,7 @@ from typing import Annotated, Any, Dict, List, Optional, Tuple
 from semantic_kernel.functions import kernel_function
 from supply_chain.agents.base import BaseAgent, ToolPlugin, require_valid_assessment
 from supply_chain.contracts import AgentName, CostAgentInput, CostAgentOutput
-from supply_chain.schemas import CostFindings, SupplyChainDataset
+from supply_chain.schemas import CostEstimate, CostFindings, SupplyChainDataset
 from supply_chain.tools.cost_tools import compare_options
 
 
@@ -37,7 +37,7 @@ class CostPlugin(ToolPlugin):
     @kernel_function(name="compare_options",
                      description="Compare costs of feasible mitigation options, identify cheapest.")
     async def compare_options_fn(
-            self, options_json: Annotated[str, "JSON {option_id: [decision_type, lead_time, deadline]}"],
+            self, options_json: Annotated[str, "JSON {option_id: [decision_type, lead_time, deadline, quantity]}"],
             required_quantity: Annotated[int, "Units required"],
             incident_id: Annotated[str, "Incident id"]) -> str:
         import json
@@ -70,24 +70,67 @@ class CostAgent(BaseAgent):
         require_valid_assessment(blackboard)
         
         inc = blackboard.incident
+        inv = blackboard.inventory_findings
         sup = blackboard.supplier_findings
         rt = blackboard.route_findings
-        
-        options: Dict[str, Tuple[str, int, int]] = {}
+
+        # REORDER replenishes safety stock too (replenishment_required); REROUTE ships incident demand.
+        reorder_qty = (
+            inv.replenishment_required
+            if (inv and inv.replenishment_required is not None and inv.replenishment_required > 0)
+            else inc.required_quantity
+        )
+
+        options: Dict[str, Tuple[str, int, int, int]] = {}
         
         if sup and sup.capacity_checks:
             for check in sup.capacity_checks:
                 if check.feasible:
-                    options[check.supplier_id] = ("REORDER", check.lead_time_days, inc.deadline_days)
+                    options[check.supplier_id] = ("REORDER", check.lead_time_days, inc.deadline_days, reorder_qty)
         
         if rt and rt.route_assessments:
             for assess in rt.route_assessments:
                 if assess.viable:
-                    options[assess.route_id] = ("REROUTE", assess.total_delivery_days, inc.deadline_days)
+                    options[assess.route_id] = ("REROUTE", assess.total_delivery_days, inc.deadline_days, inc.required_quantity)
         
         import json
         opts_json = json.dumps({k: list(v) for k, v in options.items()})
         
+        # 1. First: Estimate cost for each viable option using estimate_option_cost
+        estimates: List[CostEstimate] = []
+        for option_id, (decision_type, lead_time, deadline, qty) in options.items():
+            est: CostEstimate = await self.call_tool(
+                kernel, "estimate_option_cost", CostEstimate,
+                decision_type=decision_type,
+                option_id=option_id,
+                required_quantity=qty,
+                deadline_days=deadline,
+                lead_time_days=lead_time,
+            )
+            estimates.append(est)
+
+        # If no viable options exist, still invoke estimate_option_cost on the first
+        # candidate (informational only; compare_options still receives empty options)
+        if not estimates:
+            fallback_candidate = None
+            if sup and sup.capacity_checks:
+                c = sup.capacity_checks[0]
+                fallback_candidate = ("REORDER", c.supplier_id, c.lead_time_days, inc.deadline_days, reorder_qty)
+            elif rt and rt.route_assessments:
+                a = rt.route_assessments[0]
+                fallback_candidate = ("REROUTE", a.route_id, a.total_delivery_days, inc.deadline_days, inc.required_quantity)
+            if fallback_candidate is not None:
+                d_type, opt_id, lead_t, dl, qty = fallback_candidate
+                await self.call_tool(
+                    kernel, "estimate_option_cost", CostEstimate,
+                    decision_type=d_type,
+                    option_id=opt_id,
+                    required_quantity=qty,
+                    deadline_days=dl,
+                    lead_time_days=lead_t,
+                )
+
+        # 2. Then: Compare viable options using compare_options
         findings: CostFindings = await self.call_tool(
             kernel, "compare_options", CostFindings,
             options_json=opts_json,
@@ -99,3 +142,4 @@ class CostAgent(BaseAgent):
             "recommendation": findings.recommendation,
             "cheapest_option": findings.cheapest_option,
         })
+

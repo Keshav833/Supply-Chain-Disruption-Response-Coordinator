@@ -13,6 +13,7 @@ from semantic_kernel.filters import FilterTypes
 
 from supply_chain import config
 from supply_chain.agents.coordinator_agent import CoordinatorAgent
+from supply_chain.agents.cost_agent import CostAgent
 from supply_chain.agents.inventory_agent import InventoryAgent
 from supply_chain.agents.monitor_agent import MonitorAgent
 from supply_chain.agents.route_agent import RouteAgent
@@ -25,7 +26,7 @@ from supply_chain.schemas import DisruptionIncident, ExecutionMode
 from tests.helpers import run_pipeline
 from tests.sk_fakes import ScriptedTextService, ScriptedToolCallingService
 
-AGENTS = [MonitorAgent, InventoryAgent, SupplierAgent, RouteAgent, CoordinatorAgent]
+AGENTS = [MonitorAgent, InventoryAgent, SupplierAgent, RouteAgent, CostAgent, CoordinatorAgent]
 
 
 def inc(inc_id):
@@ -131,5 +132,10 @@ async def test_live_gemini_function_calling():  # pragma: no cover - requires ne
                                    instructions="Call get_available_routes for destination CUST-MUM, product "
                                                 "LAPTOP-001, quantity 30, excluding RT-PUN-MUM-01.",
                                    function_choice_behavior=FunctionChoiceBehavior.Auto())
-    await sk_agent.get_response(messages="Investigate INC-1005")
+    try:
+        await sk_agent.get_response(messages="Investigate INC-1005")
+    except Exception as exc:
+        if "429" in str(exc) or "RESOURCE_EXHAUSTED" in str(exc) or "quota" in str(exc).lower():
+            pytest.skip(f"live Gemini quota exhausted: {type(exc).__name__}")
+        raise
     assert "get_available_routes" in bb.tools_invoked["RouteAgent"]

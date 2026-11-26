@@ -67,6 +67,9 @@ def _evidence_lines(r: IncidentResponse) -> List[str]:
                        f"({x['reason']})")
         if not rt["route_assessments"]:
             out.append(f"  Route     : {rt['recommendation']}")
+    cost = ev.get("cost_findings")
+    if cost:
+        out.append(f"  Cost      : {cost['recommendation']}")
     for section, status in r.evidence_status.items():
         if status != "AVAILABLE":
             out.append(f"  {section}: {status}")

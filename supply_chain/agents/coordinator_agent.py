@@ -34,24 +34,6 @@ class CoordinatorPlugin(ToolPlugin):
         super().__init__(agent, blackboard)
         self._report: Optional[EvidenceReport] = None
 
-    @kernel_function(name="propose_decision",
-                     description="Propose a mitigation decision (REORDER/REROUTE/HOLD/UNKNOWN) with justification. Return JSON: {{decision, selected_option_id, justification}}.")
-    async def propose_decision_fn(self) -> str:
-        def run():
-            report = self._report or read_blackboard_evidence(self.blackboard)
-            # Return evidence summary for LLM to propose on
-            from supply_chain.tools.coordinator_tools import feasible_options
-            opts = feasible_options(report.evidence)
-            return {
-                "recommendation": "Propose a decision based on evidence",
-                "feasible_suppliers": opts["suppliers"],
-                "feasible_routes": opts["routes"],
-                "inventory": report.evidence.inventory_findings.recommendation if report.evidence.inventory_findings else None,
-                "suppliers": report.evidence.supplier_findings.recommendation if report.evidence.supplier_findings else None,
-                "routes": report.evidence.route_findings.recommendation if report.evidence.route_findings else None,
-            }
-        return await self._run("propose_decision", run, {})
-
     @kernel_function(name="read_blackboard_evidence",
                      description="Read published Blackboard evidence with AVAILABLE/UNKNOWN/FAILED status.")
     async def read_blackboard_evidence_fn(self) -> str:
@@ -89,20 +71,29 @@ def propose_decision(report: EvidenceReport) -> Tuple[MitigationDecision, Option
     cost = ev.cost_findings
     opts = feasible_options(ev)
     inv, sup, rt = ev.inventory_findings, ev.supplier_findings, ev.route_findings
+
+    def _cost_note(option_id: str) -> str:
+        if cost and option_id in cost.cost_comparison:
+            cheapest_tag = " (cheapest feasible option)" if cost.cheapest_option == option_id else ""
+            return f" Estimated cost: ${cost.cost_comparison[option_id]:,.2f}{cheapest_tag}."
+        return ""
+
     reorder = None
     if opts["suppliers"]:
         sid = opts["suppliers"][0]
         c = next(c for c in sup.capacity_checks if c.supplier_id == sid)
         reorder = (MitigationDecision.REORDER, sid,
-                   f"REORDER from {sid}: capacity {c.available_capacity} >= replenishment "
-                   f"{inv.replenishment_required} and lead time {c.lead_time_days}d <= {inc.deadline_days}d.")
+                   f"REORDER {inv.replenishment_required} units from {sid}: capacity {c.available_capacity} >= replenishment "
+                   f"{inv.replenishment_required} and lead time {c.lead_time_days}d <= {inc.deadline_days}d."
+                   + _cost_note(sid))
     reroute = None
     if opts["routes"]:
         rid = opts["routes"][0]
         a = next(a for a in rt.route_assessments if a.route_id == rid)
         reroute = (MitigationDecision.REROUTE, rid,
                    f"REROUTE via {rid} from {a.origin}: {a.origin_usable_stock} usable units >= "
-                   f"{inc.required_quantity} required and {a.total_delivery_days}d <= {inc.deadline_days}d.")
+                   f"{inc.required_quantity} required and {a.total_delivery_days}d <= {inc.deadline_days}d."
+                   + _cost_note(rid))
     ordered = [reroute, reorder] if inc.disruption_type == DisruptionType.ROUTE_BLOCKAGE else [reorder, reroute]
     for choice in ordered:
         if choice:
@@ -200,7 +191,7 @@ class CoordinatorAgent(BaseAgent):
             kernel, "validate_mitigation_decision", DecisionValidation,
             decision=decision.value, option_id=option or "")
         if not check.is_valid:
-            raise RuntimeError(f"final validation failed: {check.violations}")
+            raise RuntimeError(f"proposed decision failed validation: {check.violations}")
         
         result = MitigationResult(
             incident_id=inp.incident_id, decision=decision, justification=justification,

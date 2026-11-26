@@ -10,6 +10,7 @@ from supply_chain.data.sample_data import load_dataset
 from supply_chain.schemas import DisruptionIncident, EvidenceStatus, MitigationDecision
 from supply_chain.tools import (
     coordinator_tools,
+    cost_tools,
     inventory_tools,
     monitor_tools,
     route_tools,
@@ -24,7 +25,7 @@ from supply_chain.tools.supplier_tools import check_supplier_capacity, find_alte
 
 MODULES = {AgentName.MONITOR: monitor_tools, AgentName.INVENTORY: inventory_tools,
            AgentName.SUPPLIER: supplier_tools, AgentName.ROUTE: route_tools,
-           AgentName.COORDINATOR: coordinator_tools}
+           AgentName.COST: cost_tools, AgentName.COORDINATOR: coordinator_tools}
 
 
 def incident(**kw):

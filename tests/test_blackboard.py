@@ -14,6 +14,7 @@ from supply_chain.contracts import BLACKBOARD_SECTION, AgentName
 from supply_chain.schemas import (
     AgentLogEntry,
     AgentStatus,
+    CostFindings,
     DisruptionIncident,
     EvidenceStatus,
     ExecutionMode,
@@ -56,8 +57,14 @@ def decision():
                             parties_to_notify=[], evidence_summary={})
 
 
+def cost():
+    return CostFindings(incident_id="INC-1001", cost_estimates=[], cheapest_option=None,
+                        cost_comparison={}, recommendation="none")
+
+
 PAYLOADS = {"incident_assessment": assessment, "inventory_findings": inventory,
-            "supplier_findings": supplier, "route_findings": route, "mitigation_decision": decision}
+            "supplier_findings": supplier, "route_findings": route,
+            "cost_findings": cost, "mitigation_decision": decision}
 
 
 async def running(bb, *agents):
@@ -138,7 +145,8 @@ async def test_missing_evidence_stays_unknown_and_failure_is_failed_not_negative
     assert status == {"incident_assessment": EvidenceStatus.AVAILABLE,
                       "inventory_findings": EvidenceStatus.UNKNOWN,
                       "supplier_findings": EvidenceStatus.UNKNOWN,
-                      "route_findings": EvidenceStatus.FAILED}
+                      "route_findings": EvidenceStatus.FAILED,
+                      "cost_findings": EvidenceStatus.UNKNOWN}
     assert bb.route_findings is None  # no fabricated evidence
     assert bb.errors == {"RouteAgent": "route service down"}
     snap = bb.snapshot_evidence()
@@ -161,7 +169,8 @@ async def test_snapshot_contains_only_published_evidence_and_is_immutable():
     await bb.publish(AgentName.MONITOR, "incident_assessment", assessment())
     snap = bb.snapshot_evidence()
     assert set(type(snap).model_fields) == {"incident", "incident_assessment", "inventory_findings",
-                                            "supplier_findings", "route_findings", "agent_status"}
+                                            "supplier_findings", "route_findings", "cost_findings",
+                                            "agent_status"}
     with pytest.raises(Exception):
         snap.inventory_findings = inventory()
     snap.incident_assessment.affected_sites.append("X")
@@ -172,7 +181,7 @@ async def test_concurrent_updates_do_not_corrupt_state():
     bb = Blackboard(INC)
     await running(bb, AgentName.MONITOR)
     await bb.publish(AgentName.MONITOR, "incident_assessment", assessment())
-    await running(bb, AgentName.INVENTORY, AgentName.SUPPLIER, AgentName.ROUTE)
+    await running(bb, AgentName.INVENTORY, AgentName.SUPPLIER, AgentName.ROUTE, AgentName.COST)
 
     async def work(agent, section, payload):
         for i in range(25):
@@ -182,9 +191,10 @@ async def test_concurrent_updates_do_not_corrupt_state():
 
     await asyncio.gather(work(AgentName.INVENTORY, "inventory_findings", inventory()),
                          work(AgentName.SUPPLIER, "supplier_findings", supplier()),
-                         work(AgentName.ROUTE, "route_findings", route()))
+                         work(AgentName.ROUTE, "route_findings", route()),
+                         work(AgentName.COST, "cost_findings", cost()))
     assert all(len(bb.tools_invoked[a.value]) == 25 for a in
-               (AgentName.INVENTORY, AgentName.SUPPLIER, AgentName.ROUTE))
+               (AgentName.INVENTORY, AgentName.SUPPLIER, AgentName.ROUTE, AgentName.COST))
     assert set(bb.evidence_status().values()) == {EvidenceStatus.AVAILABLE}
     assert [e.sequence for e in bb.run_log] == list(range(len(bb.run_log)))
 

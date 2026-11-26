@@ -147,16 +147,26 @@ class SupplyChainOrchestrator:
             return await self._finish(bb, outputs, "rejected", MitigationDecision.UNKNOWN, None,
                                 f"No decision: {msg}. Investigation was not started.", errors + [msg], start)
 
-        # Step 4: concurrent investigation
+        # Step 4: concurrent investigation (CostAgent runs after supplier/route findings are published)
         await bb.record_event("investigation_started", {"agents": [a.name.value for a in self.specialists]},
                               AgentStatus.RUNNING)
-        results = await asyncio.gather(*(self._run_agent(a, bb) for a in self.specialists))
-        for agent, out in zip(self.specialists, results):
+        primary_specialists = [a for a in self.specialists if a.name != AgentName.COST]
+        cost_specialists = [a for a in self.specialists if a.name == AgentName.COST]
+
+        primary_results = await asyncio.gather(*(self._run_agent(a, bb) for a in primary_specialists))
+        for agent, out in zip(primary_specialists, primary_results):
             if out is not None:
                 outputs[agent.name] = out
-        for name in (AgentName.INVENTORY, AgentName.SUPPLIER, AgentName.ROUTE):
-            if name.value in bb.errors:
-                errors.append(bb.errors[name.value])
+
+        if cost_specialists:
+            cost_results = await asyncio.gather(*(self._run_agent(a, bb) for a in cost_specialists))
+            for agent, out in zip(cost_specialists, cost_results):
+                if out is not None:
+                    outputs[agent.name] = out
+
+        for agent in self.specialists:
+            if agent.name.value in bb.errors:
+                errors.append(bb.errors[agent.name.value])
         await bb.record_event("investigation_finished",
                               {"agent_status": {a.name.value: bb.agent_status[a.name.value].value
                                                 for a in self.specialists},
@@ -226,7 +236,7 @@ class SupplyChainOrchestrator:
             agent_execution_modes=modes, agent_status=dict(bb.agent_status), agent_errors=dict(bb.errors),
             tools_invoked=state["tools_invoked"],
             evidence={k: state[k] for k in ("incident_assessment", "inventory_findings", "supplier_findings",
-                                            "route_findings", "mitigation_decision")},
+                                            "route_findings", "cost_findings", "mitigation_decision")},
             evidence_status=state["evidence_status"], notifications=state["notifications"],
             final_validation=validation, errors=errors + ([log_error] if log_error else []), trace=bb.trace(),
             log_path=str(self.log_path), log_persisted=log_error is None and written > 0,

@@ -1,6 +1,6 @@
 "Cost Agent tools: estimate_option_cost, compare_options."
 from __future__ import annotations
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 from supply_chain.schemas import CostEstimate, CostFindings, SupplyChainDataset
 from supply_chain.tools.common import ToolInputError, dataset_or_default
 
@@ -52,7 +52,7 @@ def estimate_option_cost(
 
 
 def compare_options(
-    options: Dict[str, Tuple[str, int, int]],
+    options: Dict[str, Tuple[Any, ...]],
     required_quantity: int, incident_id: str,
     dataset: Optional[SupplyChainDataset] = None,
 ) -> CostFindings:
@@ -67,10 +67,12 @@ def compare_options(
     estimates: List[CostEstimate] = []
     cost_comparison: Dict[str, float] = {}
     
-    for option_id, (decision_type, lead_time, deadline) in options.items():
+    for option_id, spec in options.items():
+        decision_type, lead_time, deadline = spec[0], spec[1], spec[2]
+        qty = spec[3] if len(spec) > 3 else required_quantity
         try:
             est = estimate_option_cost(
-                decision_type, option_id, required_quantity, deadline, lead_time, dataset
+                decision_type, option_id, qty, deadline, lead_time, dataset
             )
             estimates.append(est)
             cost_comparison[option_id] = est.total_cost

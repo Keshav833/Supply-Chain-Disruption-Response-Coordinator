@@ -1,7 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
 
 const API = import.meta.env.VITE_API_BASE_URL || "";
-const AGENT_ORDER = ["MonitorAgent", "InventoryAgent", "SupplierAgent", "RouteAgent", "CoordinatorAgent"];
+const AGENT_ORDER = [
+  "MonitorAgent",
+  "InventoryAgent",
+  "SupplierAgent",
+  "RouteAgent",
+  "CostAgent",
+  "CoordinatorAgent",
+];
+const NUMBER_WORDS = { 1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven" };
+const AGENT_COUNT_WORD = NUMBER_WORDS[AGENT_ORDER.length] || String(AGENT_ORDER.length);
 
 function titleize(value = "") {
   return value.replaceAll("_", " ").replace(/([a-z])([A-Z])/g, "$1 $2");
@@ -78,7 +87,7 @@ export default function App() {
         <div className="run-card">
           <p className="eyebrow">Incident control</p>
           <h2>Investigate a simulated disruption</h2>
-          <p className="muted">The five-agent workflow gathers Blackboard evidence before recommending an unapproved mitigation.</p>
+          <p className="muted">The {AGENT_COUNT_WORD}-agent workflow gathers Blackboard evidence before recommending an unapproved mitigation.</p>
           <label htmlFor="incident">Sample incident</label>
           <select id="incident" value={selectedId} onChange={(event) => setSelectedId(event.target.value)} disabled={loading || running}>
             {incidents.map((incident) => <option key={incident.incident_id} value={incident.incident_id}>{incident.incident_id} - {titleize(incident.disruption_type)}</option>)}
@@ -114,15 +123,16 @@ export default function App() {
         {activeTab === "overview" && <Overview result={result} />}
         {activeTab === "blackboard" && <Blackboard result={result} />}
         {activeTab === "trace" && <Trace result={result} />}
-      </> : <section className="empty-state"><h2>Ready for an investigation</h2><p>Choose a sample incident and run the five-agent analysis to see evidence, decision, and trace.</p></section>}
+      </> : <section className="empty-state"><h2>Ready for an investigation</h2><p>Choose a sample incident and run the {AGENT_COUNT_WORD}-agent analysis to see evidence, decision, and trace.</p></section>}
     </main>
   );
 }
 
 function Overview({ result }) {
+  const agentList = Array.from(new Set([...AGENT_ORDER, ...Object.keys(result.agent_status || {})]));
   return <section className="content-grid">
-    <div className="panel agents-panel"><div className="panel-heading"><div><p className="eyebrow">Workflow health</p><h2>Agent execution</h2></div><span>{Object.keys(result.agent_status).length}/5 agents</span></div>
-      <div className="agent-list">{AGENT_ORDER.map((agent) => <article className="agent-row" key={agent}><div><h3>{titleize(agent.replace("Agent", ""))}</h3><p>{(result.tools_invoked[agent] || []).join(" + ") || "Awaiting execution"}</p></div><div><Badge value={result.agent_status[agent]} /><small>{result.agent_execution_modes[agent] || "not started"}</small></div></article>)}</div>
+    <div className="panel agents-panel"><div className="panel-heading"><div><p className="eyebrow">Workflow health</p><h2>Agent execution</h2></div><span>{Object.keys(result.agent_status).length}/{agentList.length} agents</span></div>
+      <div className="agent-list">{agentList.map((agent) => <article className="agent-row" key={agent}><div><h3>{titleize(agent.replace("Agent", ""))}</h3><p>{(result.tools_invoked[agent] || []).join(" + ") || "Awaiting execution"}</p></div><div><Badge value={result.agent_status[agent]} /><small>{result.agent_execution_modes[agent] || "not started"}</small></div></article>)}</div>
     </div>
     <div className="panel"><p className="eyebrow">Decision evidence</p><h2>Mitigation basis</h2><div className="evidence-list">{Object.entries(result.evidence_status).map(([section, evidenceState]) => <div key={section} className="evidence-row"><span>{titleize(section)}</span><Badge value={evidenceState} /></div>)}</div>
       <h3 className="subheading">Notify</h3>{result.notifications.length ? <ul>{result.notifications.map((item) => <li key={item.party}><strong>{item.party}</strong> - {item.reason}</li>)}</ul> : <p className="empty">No parties identified.</p>}
